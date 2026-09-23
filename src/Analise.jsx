@@ -8,22 +8,20 @@ import { FaFilePdf } from "react-icons/fa";
 import { GoShieldCheck, GoShield } from "react-icons/go";
 import { FaCheck } from "react-icons/fa6";
 
-const API_BASE = (import.meta.env.VITE_API_URL || "").replace(/\/$/, "");
 
 function Analise() {
     const [etapa, setEtapa] = useState("upload"); // 'upload' | 'preview' | 'resultado' | 'relatorio'
     const [arquivo, setArquivo] = useState(null);
     const [preview, setPreview] = useState(null);
     const [dragAtivo, setDragAtivo] = useState(false);
+    const [gerandoPDF, setGerandoPDF] = useState(false);
 
 
     // Estados para integração com a API
     const [resultadoAPI, setResultadoAPI] = useState(null);
-    const [resultadoValid, setResultadoValid] = useState(null);
-    const [erroComplementar, setErroComplementar] = useState("");
     const [carregando, setCarregando] = useState(false);
     const [erro, setErro] = useState("");
-    const [versaoImagem, setVersaoImagem] = useState(0);
+    const [versaoImagem, setVersaoImagem] = useState(Date.now());
 
 
     // Manipulação de seleção do arquivo
@@ -33,8 +31,6 @@ function Analise() {
             setPreview(URL.createObjectURL(file));
             setErro("");
             setResultadoAPI(null);
-            setResultadoValid(null);
-            setErroComplementar("");
             setEtapa("preview");
         }
     };
@@ -58,42 +54,113 @@ function Analise() {
         setErro("");
 
 
-        const solicitar = async (rota, campo) => {
-            const dados = new FormData();
-            dados.append(campo, arquivo);
-            const resposta = await fetch(`${API_BASE}${rota}`, { method: "POST", body: dados });
-            const resultado = await resposta.json();
-            if (!resposta.ok) throw new Error(resultado.erro || "Erro durante a análise.");
-            return resultado;
-        };
+        const dados = new FormData();
+        dados.append("imagem", arquivo);
+
 
         try {
-            // PDFs são aceitos pelo OCR e metadados, mas o pipeline de pixels só lê imagens.
-            if (arquivo.name.toLowerCase().endsWith(".pdf")) {
-                const valid = await solicitar("/valid/analisar", "arquivo");
-                setResultadoValid(valid);
-            } else {
-                const [pixels, valid] = await Promise.allSettled([
-                    solicitar("/analisar", "imagem"),
-                    solicitar("/valid/analisar", "arquivo"),
-                ]);
-                if (pixels.status === "fulfilled") setResultadoAPI(pixels.value);
-                if (valid.status === "fulfilled") setResultadoValid(valid.value);
-                if (pixels.status === "rejected" && valid.status === "rejected") {
-                    throw new Error(`Pixels: ${pixels.reason.message}; OCR: ${valid.reason.message}`);
-                }
-                if (pixels.status === "rejected" || valid.status === "rejected") {
-                    setErroComplementar(pixels.status === "rejected"
-                        ? `A análise de pixels falhou: ${pixels.reason.message}`
-                        : `A análise OCR/metadados falhou: ${valid.reason.message}`);
-                }
+            const resposta = await fetch("http://127.0.0.1:5000/analisar", {
+                method: "POST",
+                body: dados,
+            });
+
+
+            const dadosRetornados = await resposta.json();
+
+
+            if (!resposta.ok) {
+                throw new Error(dadosRetornados.erro || "Erro durante a análise do documento.");
             }
+
+
+            setResultadoAPI(dadosRetornados);
             setVersaoImagem(Date.now());
             setEtapa("resultado");
         } catch (err) {
             setErro(err.message || "Não foi possível conectar ao servidor.");
         } finally {
             setCarregando(false);
+        }
+    };
+
+    // =========================================================
+    // GERAR E BAIXAR RELATÓRIO PDF
+    // =========================================================
+
+    const baixarPDF = async () => {
+
+        if (!resultadoAPI) {
+            setErro("Nenhum resultado de análise disponível.");
+            return;
+        }
+
+        setGerandoPDF(true);
+        setErro("");
+
+        try {
+
+            const dadosPDF = {
+                ...resultadoAPI,
+                nome_arquivo: arquivo?.name || "documento_analisado"
+            };
+
+            const resposta = await fetch(
+                "http://127.0.0.1:5000/gerar_pdf",
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify(dadosPDF)
+                }
+            );
+
+            if (!resposta.ok) {
+
+                let mensagem = "Erro ao gerar o relatório PDF.";
+
+                try {
+                    const erroAPI = await resposta.json();
+                    mensagem = erroAPI.erro || mensagem;
+                } catch {
+                    // mantém mensagem padrão
+                }
+
+                throw new Error(mensagem);
+            }
+
+            // Recebe o PDF como arquivo
+            const blob = await resposta.blob();
+
+            // Cria um endereço temporário para o PDF
+            const url = window.URL.createObjectURL(blob);
+
+            // Cria um link temporário para download
+            const link = document.createElement("a");
+
+            link.href = url;
+            link.download = `VALID_Relatorio_${arquivo?.name?.replace(/\.[^/.]+$/, "") || "documento"}.pdf`;
+
+            document.body.appendChild(link);
+
+            link.click();
+
+            // Limpa depois do download
+            document.body.removeChild(link);
+            window.URL.revokeObjectURL(url);
+
+        } catch (err) {
+
+            console.error("Erro ao gerar PDF:", err);
+
+            setErro(
+                err.message ||
+                "Não foi possível gerar o relatório PDF."
+            );
+
+        } finally {
+
+            setGerandoPDF(false);
         }
     };
 
@@ -181,39 +248,110 @@ function Analise() {
 
                         {/* ETAPA 2: PREVIEW & ENVIAR */}
                         {etapa === "preview" && (
-                            <div className="preview-area">
-                                <div className="preview-area-img">
-                                    {arquivo?.type?.includes("image") ? (
-                                        <img
-                                            src={preview}
-                                            alt="Documento"
-                                            className="preview-img"
-                                        />
-                                    ) : arquivo?.type === "application/pdf" ? (
-                                        <div className="pdf-preview">
-                                            <FaFilePdf size={80} color="#00A279" />
-                                            <h3>{arquivo.name}</h3>
+                            <div className={`preview-area ${carregando ? "modo-carregando" : ""}`}>
+
+                                {!carregando ? (
+                                    <>
+                                        <div className="preview-area-img">
+                                            {arquivo?.type?.includes("image") ? (
+                                                <img
+                                                    src={preview}
+                                                    alt="Documento"
+                                                    className="preview-img"
+                                                />
+                                            ) : arquivo?.type === "application/pdf" ? (
+                                                <div className="pdf-preview">
+                                                    <FaFilePdf size={80} color="#00A279" />
+                                                    <h3>{arquivo.name}</h3>
+                                                </div>
+                                            ) : (
+                                                <p>{arquivo?.name}</p>
+                                            )}
                                         </div>
-                                    ) : (
-                                        <p>{arquivo?.name}</p>
-                                    )}
-                                </div>
 
+                                        {erro && (
+                                            <p
+                                                style={{
+                                                    color: "#d9534f",
+                                                    marginTop: "15px",
+                                                    fontWeight: "bold"
+                                                }}
+                                            >
+                                                {erro}
+                                            </p>
+                                        )}
 
-                                {erro && (
-                                    <p style={{ color: "#d9534f", marginTop: "15px", fontWeight: "bold" }}>
-                                        {erro}
-                                    </p>
+                                        <button
+                                            className="btn-acao"
+                                            onClick={analisarDocumento}
+                                            disabled={carregando}
+                                        >
+                                            Analisar documento
+                                        </button>
+                                    </>
+                                ) : (
+                                    <div className="scanner-loading">
+
+                                        {/* DOCUMENTO */}
+                                        <div className="document-scanner">
+
+                                            <div className="document-glow"></div>
+
+                                            <div className="fake-document">
+
+                                                <div className="doc-top">
+                                                    <div className="doc-symbol"></div>
+
+                                                    <div className="doc-title-lines">
+                                                        <span></span>
+                                                        <span></span>
+                                                    </div>
+                                                </div>
+
+                                                <div className="doc-line long"></div>
+                                                <div className="doc-line medium"></div>
+                                                <div className="doc-line short"></div>
+
+                                                <div className="doc-block">
+                                                    <span></span>
+                                                    <span></span>
+                                                    <span></span>
+                                                </div>
+
+                                                <div className="doc-line long"></div>
+                                                <div className="doc-line medium"></div>
+
+                                                {/* LINHA DO SCANNER */}
+                                                <div className="scanner-line">
+                                                    <div className="scanner-line-glow"></div>
+                                                </div>
+
+                                            </div>
+                                        </div>
+
+                                        {/* TEXTO */}
+                                        <div className="loading-text">
+
+                                            <h2>
+                                                Analisando seu documento
+                                            </h2>
+
+                                            <p>
+                                                O sistema está examinando pixels,
+                                                regiões textuais e padrões estruturais.
+                                            </p>
+
+                                            <div className="loading-status">
+                                                <span className="status-loader"></span>
+                                                <span className="loading-message">
+                                                    Processando informações...
+                                                </span>
+                                            </div>
+
+                                        </div>
+
+                                    </div>
                                 )}
-
-
-                                <button
-                                    className="btn-acao"
-                                    onClick={analisarDocumento}
-                                    disabled={carregando}
-                                >
-                                    {carregando ? "Analisando documento..." : "Analisar documento"}
-                                </button>
                             </div>
                         )}
 
@@ -222,28 +360,28 @@ function Analise() {
                         {etapa === "resultado" && (
                             <div className="resultado-area">
                                 <div className="icone-resultado">
-                                    {resultadoAPI && (ehAutentico() ? <GoShieldCheck /> : <GoShield />)}
+                                    {ehAutentico() ? <GoShieldCheck /> : <GoShield />}
                                 </div>
 
 
                                 <h2>
-                                    {resultadoAPI ? (ehAutentico() ? "Baixa suspeita" : "Suspeito") : "Análise OCR concluída"}
+                                    {ehAutentico() ? "Autêntico" : "Suspeito"}
                                 </h2>
 
 
                                 <p>
-                                    {resultadoAPI
-                                        ? "A classificação indica possíveis inconsistências e não comprova a autenticidade do documento."
-                                        : "O PDF foi analisado por OCR e metadados. Não foi realizada análise de pixels."}
+                                    {ehAutentico()
+                                        ? "Seu documento foi analisado com sucesso e não foram identificados sinais significativos de alteração."
+                                        : "Seu documento foi analisado e foram identificadas possíveis inconsistências na estrutura ou pixels."}
                                 </p>
 
 
-                                {resultadoAPI && <p>
+                                <p>
                                     <strong>
                                         Classificação Final: {obterClassificacao()} ({Number(obterScoreFinal()).toFixed(1)}%)
                                     </strong>
-                                </p>}
-                                {erroComplementar && <p role="alert">{erroComplementar}</p>}
+                                </p>
+
 
                                 <button
                                     className="btn-acao"
@@ -265,7 +403,6 @@ function Analise() {
 
 
                                 {/* SCORE PRINCIPAL & EXPLICAÇÃO */}
-                                {resultadoAPI && <>
                                 <div className="resultado-principal" style={{ marginTop: "20px" }}>
                                     <div className={`score-card ${classeResultado()}`}>
                                         <div className="score-label">SCORE FINAL</div>
@@ -282,7 +419,7 @@ function Analise() {
                                         <h3>Resumo da Análise</h3>
                                         <p>
                                             O resultado final combina as análises de pixels e EOCR. A análise de pixels
-                                            representa 70% do resultado e a análise geométrica textual representa 30%.
+                                            representa 50% do resultado e a análise geométrica textual representa 50%.
                                         </p>
                                     </div>
                                 </div>
@@ -303,7 +440,7 @@ function Analise() {
                                         </div>
                                         <div className="imagem-container">
                                             <img
-                                                src={`${API_BASE}/results/block_heatmap.png?v=${versaoImagem}`}
+                                                src={`http://127.0.0.1:5000/results/block_heatmap.png?v=${versaoImagem}`}
                                                 alt="Heatmap da análise de pixels"
                                             />
                                         </div>
@@ -318,7 +455,7 @@ function Analise() {
                                         </div>
                                         <div className="imagem-container">
                                             <img
-                                                src={`${API_BASE}/results/hybrid_analysis.png?v=${versaoImagem}`}
+                                                src={`http://127.0.0.1:5000/results/hybrid_analysis.png?v=${versaoImagem}`}
                                                 alt="Resultado visual da análise EOCR"
                                             />
                                         </div>
@@ -333,7 +470,7 @@ function Analise() {
                                         </div>
                                         <div className="imagem-container">
                                             <img
-                                                src={`${API_BASE}/results/continuity_heatmap.png?v=${versaoImagem}`}
+                                                src={`http://127.0.0.1:5000/results/continuity_heatmap.png?v=${versaoImagem}`}
                                                 alt="Heatmap de continuidade dos pixels"
                                             />
                                         </div>
@@ -341,7 +478,38 @@ function Analise() {
                                     </div>
                                 </div>
 
+                                {/* ÁREAS DE ATENÇÃO / LISTA DE ANOMALIAS */}
+                                {resultadoAPI?.lista_anomalias && resultadoAPI.lista_anomalias.length > 0 && (
+                                    <div className="regioes" style={{ marginTop: "30px" }}>
+                                        <div className="section-title">
+                                            <span>ATENÇÃO</span>
+                                            <h2>Áreas que merecem atenção</h2>
+                                        </div>
 
+                                        <div className="regioes-list">
+                                            {resultadoAPI.lista_anomalias.map((anomalia, index) => (
+                                                <div className="regiao" key={index}>
+                                                    <div className="regiao-number">
+                                                        {String(index + 1).padStart(2, "0")}
+                                                    </div>
+
+                                                    <div className="regiao-info">
+                                                        <strong>
+                                                            {anomalia.texto_identificado || `Região ${index + 1}`}
+                                                        </strong>
+
+                                                        <span>
+                                                            Nível: {anomalia.nivel_classificacao}
+                                                            {" | "}
+                                                            Pontuação Suspeita:{" "}
+                                                            {Number(anomalia.pontuacao_suspeita).toFixed(1)}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
                                 {/* CARDS DE ANÁLISES COM BARRAS DE PROGRESSO */}
                                 <div className="analises-grid" style={{ marginTop: "30px" }}>
                                     {/* CARD PIXEL */}
@@ -434,62 +602,59 @@ function Analise() {
                                 </div>
 
 
-                                {/* ÁREAS DE ATENÇÃO / LISTA DE ANOMALIAS */}
-                                {resultadoAPI?.lista_anomalias && resultadoAPI.lista_anomalias.length > 0 && (
-                                    <div className="regioes" style={{ marginTop: "30px" }}>
-                                        <div className="section-title">
-                                            <span>ATENÇÃO</span>
-                                            <h2>Áreas que merecem atenção</h2>
-                                        </div>
-
-
-                                        <div className="regioes-list">
-                                            {resultadoAPI.lista_anomalias.map((anomalia, index) => (
-                                                <div className="regiao" key={index}>
-                                                    <div className="regiao-number">
-                                                        {String(index + 1).padStart(2, "0")}
-                                                    </div>
-                                                    <div className="regiao-info">
-                                                        <strong>
-                                                            {anomalia.texto_identificado || `Região ${index + 1}`}
-                                                        </strong>
-                                                        <span>
-                                                            Nível: {anomalia.nivel_classificacao} | Pontuação Suspeita: {Number(anomalia.pontuacao_suspeita).toFixed(1)}
-                                                        </span>
-                                                    </div>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
-                                )}
-
-
-                                </>}
-                                {resultadoValid && (
-                                    <section className="valid-detalhes">
-                                        <h3>OCR e metadados</h3>
-                                        <p><strong>Texto reconhecido:</strong> {resultadoValid.ocr?.data?.text || "Nenhum texto encontrado"}</p>
-                                        <p><strong>Confiança OCR:</strong> {resultadoValid.ocr?.data?.confidence ?? "Indisponível"}%</p>
-                                        <p><strong>Nome:</strong> {resultadoValid.ocr?.data?.fields?.nome || "Não identificado"}</p>
-                                        <p><strong>CPF:</strong> {resultadoValid.ocr?.data?.fields?.cpf || "Não identificado"}</p>
-                                        <p><strong>Datas:</strong> {resultadoValid.ocr?.data?.fields?.datas?.map(String).join(", ") || "Não identificadas"}</p>
-                                        <p><strong>Tipo:</strong> {resultadoValid.metadados?.data?.type || "Indisponível"}</p>
-                                        {[...(resultadoValid.ocr?.evidences || []), ...(resultadoValid.metadados?.evidences || [])].map((evidencia, index) => (
-                                            <p key={index}><strong>{evidencia.code}:</strong> {evidencia.message}</p>
-                                        ))}
-                                        {resultadoValid.ocr?.warnings?.map((aviso, index) => <p key={index} role="alert">{aviso}</p>)}
-                                    </section>
-                                )}
-                                {erroComplementar && <p role="alert">{erroComplementar}</p>}
                                 {/* BOTÃO PARA VOLTAR */}
-                                <div className="acoes-relatorio" style={{ marginTop: "30px", textAlign: "center" }}>
+                                {/* AÇÕES DO RELATÓRIO */}
+                                <div
+                                    className="acoes-relatorio"
+                                    style={{
+                                        marginTop: "30px",
+                                        textAlign: "center",
+                                        display: "flex",
+                                        justifyContent: "center",
+                                        gap: "15px",
+                                        flexWrap: "wrap"
+                                    }}
+                                >
+
+                                    {/* BOTÃO BAIXAR PDF */}
+                                    <button
+                                        className="btn-acao"
+                                        onClick={baixarPDF}
+                                        disabled={gerandoPDF}
+                                    >
+                                        <FaFilePdf style={{ marginRight: "8px" }} />
+
+                                        {gerandoPDF
+                                            ? "Gerando PDF..."
+                                            : "Baixar relatório PDF"
+                                        }
+                                    </button>
+
+
+                                    {/* BOTÃO VOLTAR */}
                                     <button
                                         className="btn-acao btn-fechar-rel"
                                         onClick={() => setEtapa("resultado")}
+                                        disabled={gerandoPDF}
                                     >
                                         Voltar para o Resultado
                                     </button>
+
                                 </div>
+
+                                {/* ERRO AO GERAR PDF */}
+                                {erro && (
+                                    <p
+                                        style={{
+                                            color: "#d9534f",
+                                            marginTop: "15px",
+                                            textAlign: "center",
+                                            fontWeight: "bold"
+                                        }}
+                                    >
+                                        {erro}
+                                    </p>
+                                )}
                             </div>
                         )}
 
@@ -543,3 +708,4 @@ function Analise() {
 
 
 export default Analise;
+
