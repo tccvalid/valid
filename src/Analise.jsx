@@ -8,6 +8,7 @@ import { FaFilePdf } from "react-icons/fa";
 import { GoShieldCheck, GoShield } from "react-icons/go";
 import { FaCheck } from "react-icons/fa6";
 
+const API_BASE = (import.meta.env.VITE_API_URL || "").replace(/\/$/, "");
 
 function Analise() {
     const [etapa, setEtapa] = useState("upload"); // 'upload' | 'preview' | 'resultado' | 'relatorio'
@@ -18,9 +19,11 @@ function Analise() {
 
     // Estados para integração com a API
     const [resultadoAPI, setResultadoAPI] = useState(null);
+    const [resultadoValid, setResultadoValid] = useState(null);
+    const [erroComplementar, setErroComplementar] = useState("");
     const [carregando, setCarregando] = useState(false);
     const [erro, setErro] = useState("");
-    const [versaoImagem, setVersaoImagem] = useState(Date.now());
+    const [versaoImagem, setVersaoImagem] = useState(0);
 
 
     // Manipulação de seleção do arquivo
@@ -30,6 +33,8 @@ function Analise() {
             setPreview(URL.createObjectURL(file));
             setErro("");
             setResultadoAPI(null);
+            setResultadoValid(null);
+            setErroComplementar("");
             setEtapa("preview");
         }
     };
@@ -53,26 +58,36 @@ function Analise() {
         setErro("");
 
 
-        const dados = new FormData();
-        dados.append("imagem", arquivo);
-
+        const solicitar = async (rota, campo) => {
+            const dados = new FormData();
+            dados.append(campo, arquivo);
+            const resposta = await fetch(`${API_BASE}${rota}`, { method: "POST", body: dados });
+            const resultado = await resposta.json();
+            if (!resposta.ok) throw new Error(resultado.erro || "Erro durante a análise.");
+            return resultado;
+        };
 
         try {
-            const resposta = await fetch("http://127.0.0.1:5000/analisar", {
-                method: "POST",
-                body: dados,
-            });
-
-
-            const dadosRetornados = await resposta.json();
-
-
-            if (!resposta.ok) {
-                throw new Error(dadosRetornados.erro || "Erro durante a análise do documento.");
+            // PDFs são aceitos pelo OCR e metadados, mas o pipeline de pixels só lê imagens.
+            if (arquivo.name.toLowerCase().endsWith(".pdf")) {
+                const valid = await solicitar("/valid/analisar", "arquivo");
+                setResultadoValid(valid);
+            } else {
+                const [pixels, valid] = await Promise.allSettled([
+                    solicitar("/analisar", "imagem"),
+                    solicitar("/valid/analisar", "arquivo"),
+                ]);
+                if (pixels.status === "fulfilled") setResultadoAPI(pixels.value);
+                if (valid.status === "fulfilled") setResultadoValid(valid.value);
+                if (pixels.status === "rejected" && valid.status === "rejected") {
+                    throw new Error(`Pixels: ${pixels.reason.message}; OCR: ${valid.reason.message}`);
+                }
+                if (pixels.status === "rejected" || valid.status === "rejected") {
+                    setErroComplementar(pixels.status === "rejected"
+                        ? `A análise de pixels falhou: ${pixels.reason.message}`
+                        : `A análise OCR/metadados falhou: ${valid.reason.message}`);
+                }
             }
-
-
-            setResultadoAPI(dadosRetornados);
             setVersaoImagem(Date.now());
             setEtapa("resultado");
         } catch (err) {
@@ -207,28 +222,28 @@ function Analise() {
                         {etapa === "resultado" && (
                             <div className="resultado-area">
                                 <div className="icone-resultado">
-                                    {ehAutentico() ? <GoShieldCheck /> : <GoShield />}
+                                    {resultadoAPI && (ehAutentico() ? <GoShieldCheck /> : <GoShield />)}
                                 </div>
 
 
                                 <h2>
-                                    {ehAutentico() ? "Autêntico" : "Suspeito"}
+                                    {resultadoAPI ? (ehAutentico() ? "Baixa suspeita" : "Suspeito") : "Análise OCR concluída"}
                                 </h2>
 
 
                                 <p>
-                                    {ehAutentico()
-                                        ? "Seu documento foi analisado com sucesso e não foram identificados sinais significativos de alteração."
-                                        : "Seu documento foi analisado e foram identificadas possíveis inconsistências na estrutura ou pixels."}
+                                    {resultadoAPI
+                                        ? "A classificação indica possíveis inconsistências e não comprova a autenticidade do documento."
+                                        : "O PDF foi analisado por OCR e metadados. Não foi realizada análise de pixels."}
                                 </p>
 
 
-                                <p>
+                                {resultadoAPI && <p>
                                     <strong>
                                         Classificação Final: {obterClassificacao()} ({Number(obterScoreFinal()).toFixed(1)}%)
                                     </strong>
-                                </p>
-
+                                </p>}
+                                {erroComplementar && <p role="alert">{erroComplementar}</p>}
 
                                 <button
                                     className="btn-acao"
@@ -250,6 +265,7 @@ function Analise() {
 
 
                                 {/* SCORE PRINCIPAL & EXPLICAÇÃO */}
+                                {resultadoAPI && <>
                                 <div className="resultado-principal" style={{ marginTop: "20px" }}>
                                     <div className={`score-card ${classeResultado()}`}>
                                         <div className="score-label">SCORE FINAL</div>
@@ -287,7 +303,7 @@ function Analise() {
                                         </div>
                                         <div className="imagem-container">
                                             <img
-                                                src={`http://127.0.0.1:5000/results/block_heatmap.png?v=${versaoImagem}`}
+                                                src={`${API_BASE}/results/block_heatmap.png?v=${versaoImagem}`}
                                                 alt="Heatmap da análise de pixels"
                                             />
                                         </div>
@@ -302,7 +318,7 @@ function Analise() {
                                         </div>
                                         <div className="imagem-container">
                                             <img
-                                                src={`http://127.0.0.1:5000/results/hybrid_analysis.png?v=${versaoImagem}`}
+                                                src={`${API_BASE}/results/hybrid_analysis.png?v=${versaoImagem}`}
                                                 alt="Resultado visual da análise EOCR"
                                             />
                                         </div>
@@ -317,7 +333,7 @@ function Analise() {
                                         </div>
                                         <div className="imagem-container">
                                             <img
-                                                src={`http://127.0.0.1:5000/results/continuity_heatmap.png?v=${versaoImagem}`}
+                                                src={`${API_BASE}/results/continuity_heatmap.png?v=${versaoImagem}`}
                                                 alt="Heatmap de continuidade dos pixels"
                                             />
                                         </div>
@@ -448,6 +464,23 @@ function Analise() {
                                 )}
 
 
+                                </>}
+                                {resultadoValid && (
+                                    <section className="valid-detalhes">
+                                        <h3>OCR e metadados</h3>
+                                        <p><strong>Texto reconhecido:</strong> {resultadoValid.ocr?.data?.text || "Nenhum texto encontrado"}</p>
+                                        <p><strong>Confiança OCR:</strong> {resultadoValid.ocr?.data?.confidence ?? "Indisponível"}%</p>
+                                        <p><strong>Nome:</strong> {resultadoValid.ocr?.data?.fields?.nome || "Não identificado"}</p>
+                                        <p><strong>CPF:</strong> {resultadoValid.ocr?.data?.fields?.cpf || "Não identificado"}</p>
+                                        <p><strong>Datas:</strong> {resultadoValid.ocr?.data?.fields?.datas?.map(String).join(", ") || "Não identificadas"}</p>
+                                        <p><strong>Tipo:</strong> {resultadoValid.metadados?.data?.type || "Indisponível"}</p>
+                                        {[...(resultadoValid.ocr?.evidences || []), ...(resultadoValid.metadados?.evidences || [])].map((evidencia, index) => (
+                                            <p key={index}><strong>{evidencia.code}:</strong> {evidencia.message}</p>
+                                        ))}
+                                        {resultadoValid.ocr?.warnings?.map((aviso, index) => <p key={index} role="alert">{aviso}</p>)}
+                                    </section>
+                                )}
+                                {erroComplementar && <p role="alert">{erroComplementar}</p>}
                                 {/* BOTÃO PARA VOLTAR */}
                                 <div className="acoes-relatorio" style={{ marginTop: "30px", textAlign: "center" }}>
                                     <button
