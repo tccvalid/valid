@@ -73,6 +73,28 @@ function Analise() {
             }
 
 
+            // A análise já terminou no Flask. Persistir o histórico não deve
+            // impedir que o usuário visualize o resultado.
+            const token = localStorage.getItem("token");
+            if (token) {
+                try {
+                    const salvo = await fetch("http://localhost:8000/analises/", {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                            Authorization: `Bearer ${token}`
+                        },
+                        body: JSON.stringify({
+                            nome_arquivo: arquivo.name,
+                            tamanho_bytes: arquivo.size,
+                            resultado: dadosRetornados
+                        })
+                    });
+                    if (!salvo.ok) console.warn("Histórico não salvo:", await salvo.text());
+                } catch (falhaHistorico) {
+                    console.warn("API de histórico indisponível:", falhaHistorico);
+                }
+            }
             setResultadoAPI(dadosRetornados);
             setVersaoImagem(Date.now());
             setEtapa("resultado");
