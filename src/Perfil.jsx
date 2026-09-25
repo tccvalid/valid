@@ -19,7 +19,10 @@ function Perfil() {
   const [usuario, setUsuario] = useState(null); // dados do usuário vazio
   const [loading, setLoading] = useState(true); // quando estiver carregando
   const [erro, setErro] = useState(null); // caso tenha erro
-  const [stats, setStats] = useState({ documentos: 25, ultimaHora: "Hoje, 12:45", ultimoArquivo: "Documento.pdf", taxa: "98,6%" });
+  const [stats, setStats] = useState({ documentos: 0, ultimaHora: "Nenhuma", ultimoArquivo: "Sem análises", taxa: "—" });
+  const [totalHistorico, setTotalHistorico] = useState(0);
+  const [detalhe, setDetalhe] = useState(null);
+  const [erroHistorico, setErroHistorico] = useState("");
   const [historico, setHistorico] = useState([]);
   const [doisFatoresAtivo, setDoisFatoresAtivo] = useState(false);
 
@@ -95,40 +98,27 @@ function Perfil() {
 
         setDoisFatoresAtivo(dados.dois_fatores_ativo ?? false);
 
-        setHistorico([
-          {
-            id: 1,
-            nome: "Diploma_universidade.pdf",
-            tamanho: "2,4 MB",
-            data: "02/02/2026",
-            hora: "09:10",
-            status: "autentico"
-          },
-          {
-            id: 2,
-            nome: "Certificado_curso.pdf",
-            tamanho: "1,1 MB",
-            data: "03/03/2026",
-            hora: "10:09",
-            status: "autentico"
-          },
-          {
-            id: 3,
-            nome: "Rg_frente.pdf",
-            tamanho: "1,8 MB",
-            data: "04/04/2026",
-            hora: "12:37",
-            status: "suspeito"
-          },
-          {
-            id: 4,
-            nome: "Historico_escolar.pdf",
-            tamanho: "2,2 MB",
-            data: "05/05/2026",
-            hora: "14:23",
-            status: "autentico"
-          }
-        ]);
+        try {
+          const cabecalhos = { Authorization: `Bearer ${token}` };
+          const [estatisticasResp, historicoResp] = await Promise.all([
+            fetch("http://localhost:8000/analises/estatisticas", { headers: cabecalhos }),
+            fetch("http://localhost:8000/analises/?limite=10", { headers: cabecalhos })
+          ]);
+          if (!estatisticasResp.ok || !historicoResp.ok) throw new Error("Não foi possível carregar o histórico");
+          const estatisticas = await estatisticasResp.json();
+          const lista = await historicoResp.json();
+          const ultima = estatisticas.ultima_analise;
+          setStats({
+            documentos: estatisticas.documentos,
+            ultimaHora: ultima ? new Date(ultima.data_analise + "Z").toLocaleString("pt-BR") : "Nenhuma",
+            ultimoArquivo: ultima?.nome || "Sem análises",
+            taxa: estatisticas.score_medio_suspeita == null ? "—" : estatisticas.score_medio_suspeita.toLocaleString("pt-BR") + "%"
+          });
+          setHistorico(lista.itens);
+          setTotalHistorico(lista.total);
+        } catch (falha) {
+          setErroHistorico(falha.message);
+        }
 
       } catch (erro) {
 
@@ -173,8 +163,26 @@ function Perfil() {
     console.log("Trocar senha clicado");
   }
 
-  function handleVerDetalhes(id) {
-    console.log("Abrir análise:", id);
+  async function handleVerDetalhes(id) {
+    try {
+      const resposta = await fetch(`http://localhost:8000/analises/${id}`, {
+        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }
+      });
+      if (!resposta.ok) throw new Error("Não foi possível abrir esta análise");
+      setDetalhe(await resposta.json());
+    } catch (e) { setErroHistorico(e.message); }
+  }
+
+  async function carregarMais() {
+    try {
+      const resposta = await fetch(`http://localhost:8000/analises/?limite=10&deslocamento=${historico.length}`, {
+        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }
+      });
+      if (!resposta.ok) throw new Error("Não foi possível carregar mais análises");
+      const dados = await resposta.json();
+      setHistorico(anterior => [...anterior, ...dados.itens]);
+      setTotalHistorico(dados.total);
+    } catch (e) { setErroHistorico(e.message); }
   }
 
   async function alterar2FA() {
@@ -319,10 +327,10 @@ function Perfil() {
               <div>
                 {/* virá da API: stats.taxa */}
                 <p className="card_stat_numero">{stats.taxa}</p>
-                <p className="card_stat_titulo">Taxa de autenticidade média</p>
+                <p className="card_stat_titulo">Pontuação média de suspeita</p>
               </div>
             </div>
-            <p className="card_stat_legenda">Últimas taxas</p>
+            <p className="card_stat_legenda">Média das pontuações disponíveis</p>
           </div>
 
         </div>
@@ -505,9 +513,7 @@ function Perfil() {
               <h2>Histórico de análises</h2>
             </div>
 
-            <Link to="/" className="historico_ver_todas">
-              Ver todas
-            </Link>
+            <span className="historico_ver_todas">{totalHistorico} análise(s)</span>
           </div>
 
           <div className="historico_cabecalho">
@@ -517,6 +523,8 @@ function Perfil() {
             <span>Ações</span>
           </div>
 
+          {erroHistorico && <p role="alert">{erroHistorico}</p>}
+          {historico.length === 0 && <p>Nenhuma análise salva ainda.</p>}
           {historico.map((arquivo) => (
 
             <div className="historico_item" key={arquivo.id}>
@@ -525,18 +533,18 @@ function Perfil() {
 
                 <div>
                   <p>{arquivo.nome}</p>
-                  <span>PDF - {arquivo.tamanho}</span>
+                  <span>{arquivo.nome.split(".").pop().toUpperCase()} - {(arquivo.tamanho_bytes / 1048576).toFixed(2)} MB</span>
                 </div>
 
               </div>
 
               <div className="historico_data">
-                <p>{arquivo.data}</p>
-                <span>{arquivo.hora}</span>
+                <p>{new Date(arquivo.data_analise + "Z").toLocaleDateString("pt-BR")}</p>
+                <span>{new Date(arquivo.data_analise + "Z").toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}</span>
               </div>
 
-              <div className={arquivo.status === "autentico" ? "status_autentico" : "status_suspeito"}>
-                {arquivo.status === "autentico" ? "Autêntico" : "Suspeito"}
+              <div className={arquivo.classificacao.toLowerCase().includes("alta") ? "status_suspeito" : "status_autentico"}>
+                {arquivo.classificacao}
               </div>
 
               <button className="btn_historico" onClick={() => handleVerDetalhes(arquivo.id)}>
@@ -547,9 +555,18 @@ function Perfil() {
 
           ))}
 
-          <button className="btn_carregar">
-            Carregar mais
-          </button>
+          {historico.length < totalHistorico && (
+            <button className="btn_carregar" onClick={carregarMais}>Carregar mais</button>
+          )}
+          {detalhe && (
+            <div role="dialog" aria-modal="true" aria-label="Detalhes da análise" className="card_info" style={{ padding: 20, marginTop: 20 }}>
+              <h3>{detalhe.nome}</h3>
+              <p>Classificação: {detalhe.classificacao}</p>
+              <p>Pontuação de suspeita: {detalhe.score_suspeita ?? "Indisponível"}</p>
+              <pre style={{ whiteSpace: "pre-wrap", overflowWrap: "anywhere", maxHeight: 350, overflow: "auto" }}>{JSON.stringify(detalhe.resultado, null, 2)}</pre>
+              <button className="btn_perfil" onClick={() => setDetalhe(null)}>Fechar</button>
+            </div>
+          )}
 
         </div>
 
