@@ -34,7 +34,7 @@ function Analise() {
             setPreview(URL.createObjectURL(file));
             setErro("");
             setResultadoAPI(null);
-            setEtapa("preview");
+            if (!modoComparacao) setEtapa("preview");
         }
     };
 
@@ -272,51 +272,96 @@ function Analise() {
                         {/* ETAPA 1: UPLOAD */}
                         {etapa === "upload" && (
                             <div className="upload-area">
-                                <div className="icone-download"><LuDownload /></div>
-                                <h3>Arraste ou envie seu documento</h3>
-
-
-                                <div className="btn-upload">
-                                    <label style={{ cursor: "pointer" }}>
-                                        Selecione um arquivo
-                                        <input
-                                            type="file"
-                                            hidden
-                                            accept=".pdf,.jpg,.jpeg,.png"
-                                            onChange={handleInputChange}
-                                        />
-                                    </label>
+                                <div style={{ display: "flex", gap: "10px", justifyContent: "center", marginBottom: "22px", flexWrap: "wrap" }}>
+                                    <button
+                                        type="button"
+                                        className="btn-acao"
+                                        onClick={() => {
+                                            setModoComparacao(false);
+                                            setDocumento2(null);
+                                            setResultadoComparacao(null);
+                                            setErro("");
+                                        }}
+                                        disabled={!modoComparacao}
+                                    >
+                                        Analisar documento
+                                    </button>
+                                    <button
+                                        type="button"
+                                        className="btn-acao"
+                                        onClick={() => {
+                                            setModoComparacao(true);
+                                            setResultadoComparacao(null);
+                                            setErro("");
+                                        }}
+                                        disabled={modoComparacao}
+                                    >
+                                        Comparar documentos
+                                    </button>
                                 </div>
 
+                                {!modoComparacao ? (
+                                    <>
+                                        <div className="icone-download"><LuDownload /></div>
+                                        <h3>Arraste ou envie seu documento</h3>
+                                        <div className="btn-upload">
+                                            <label style={{ cursor: "pointer" }}>
+                                                Selecione um arquivo
+                                                <input type="file" hidden accept=".pdf,.jpg,.jpeg,.png" onChange={handleInputChange} />
+                                            </label>
+                                        </div>
+                                        <p>JPG, PNG ou PDF</p>
+                                    </>
+                                ) : (
+                                    <div style={{ width: "100%" }}>
+                                        <div className="icone-download"><LuDownload /></div>
+                                        <h3>Compare dois documentos</h3>
+                                        <p>Envie os dois arquivos que deseja comparar.</p>
 
-                                <p>JPG, PNG ou PDF</p>
+                                        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "16px", marginTop: "20px" }}>
+                                            <div style={{ padding: "18px", border: "1px solid #ddd", borderRadius: "12px" }}>
+                                                <strong>Documento 1</strong>
+                                                <p>{arquivo?.name || "Nenhum arquivo selecionado"}</p>
+                                                <label className="btn-upload" style={{ cursor: "pointer", display: "inline-block" }}>
+                                                    Selecionar
+                                                    <input type="file" hidden accept=".pdf,.jpg,.jpeg,.png" onChange={handleInputChange} />
+                                                </label>
+                                            </div>
 
-                                <button className="btn-acao" type="button" onClick={() => setModoComparacao(!modoComparacao)} style={{ marginTop: "16px" }}>
-                                    {modoComparacao ? "Voltar para análise simples" : "Comparar dois documentos"}
-                                </button>
+                                            <div style={{ padding: "18px", border: "1px solid #ddd", borderRadius: "12px" }}>
+                                                <strong>Documento 2</strong>
+                                                <p>{documento2?.name || "Nenhum arquivo selecionado"}</p>
+                                                <label className="btn-upload" style={{ cursor: "pointer", display: "inline-block" }}>
+                                                    Selecionar
+                                                    <input type="file" hidden accept=".pdf,.jpg,.jpeg,.png" onChange={(e) => setDocumento2(e.target.files?.[0] || null)} />
+                                                </label>
+                                            </div>
+                                        </div>
 
-                                {modoComparacao && (
-                                    <div style={{ marginTop: "18px", width: "100%" }}>
-                                        <p><strong>Documento 1:</strong> {arquivo?.name || "selecione acima"}</p>
-                                        <label className="btn-upload" style={{ cursor: "pointer", display: "inline-block", marginTop: "10px" }}>
-                                            Selecionar segundo documento
-                                            <input type="file" hidden accept=".pdf,.jpg,.jpeg,.png" onChange={(e) => setDocumento2(e.target.files?.[0] || null)} />
-                                        </label>
-                                        {documento2 && <p style={{ marginTop: "10px" }}><strong>Documento 2:</strong> {documento2.name}</p>}
-                                        <button className="btn-acao" type="button" onClick={compararDocumentos} disabled={carregando || !arquivo || !documento2} style={{ marginTop: "12px" }}>
+                                        {erro && <p style={{ color: "#d9534f", marginTop: "15px", fontWeight: "bold" }}>{erro}</p>}
+
+                                        <button
+                                            className="btn-acao"
+                                            type="button"
+                                            onClick={compararDocumentos}
+                                            disabled={carregando || !arquivo || !documento2}
+                                            style={{ marginTop: "20px" }}
+                                        >
                                             {carregando ? "Comparando..." : "Comparar documentos"}
                                         </button>
-                                    </div>
-                                )}
 
-                                {resultadoComparacao && (
-                                    <div className="resultado-area" style={{ marginTop: "20px", width: "100%" }}>
-                                        <h3>Resultado da comparação</h3>
-                                        <pre style={{ whiteSpace: "pre-wrap", overflowWrap: "anywhere", maxHeight: 320, overflow: "auto", textAlign: "left" }}>{JSON.stringify(resultadoComparacao.comparacao, null, 2)}</pre>
+                                        {resultadoComparacao && (
+                                            <div className="resultado-area" style={{ marginTop: "24px", width: "100%" }}>
+                                                <h3>Resultado da comparação</h3>
+                                                <pre style={{ whiteSpace: "pre-wrap", overflowWrap: "anywhere", maxHeight: 380, overflow: "auto", textAlign: "left" }}>
+                                                    {JSON.stringify(resultadoComparacao.comparacao, null, 2)}
+                                                </pre>
+                                            </div>
+                                        )}
                                     </div>
                                 )}
                             </div>
-                        )}
+                        ))}
 
 
                         {/* ETAPA 2: PREVIEW & ENVIAR */}
