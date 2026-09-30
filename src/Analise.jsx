@@ -22,6 +22,9 @@ function Analise() {
     const [carregando, setCarregando] = useState(false);
     const [erro, setErro] = useState("");
     const [versaoImagem, setVersaoImagem] = useState(Date.now());
+    const [modoComparacao, setModoComparacao] = useState(false);
+    const [documento2, setDocumento2] = useState(null);
+    const [resultadoComparacao, setResultadoComparacao] = useState(null);
 
 
     // Manipulação de seleção do arquivo
@@ -41,6 +44,29 @@ function Analise() {
         handleArquivo(file);
     };
 
+
+    const compararDocumentos = async () => {
+        if (!arquivo || !documento2) {
+            setErro("Selecione os dois documentos para comparar.");
+            return;
+        }
+        setCarregando(true);
+        setErro("");
+        setResultadoComparacao(null);
+        const dados = new FormData();
+        dados.append("documento1", arquivo);
+        dados.append("documento2", documento2);
+        try {
+            const resposta = await fetch("http://127.0.0.1:5000/valid/comparar", { method: "POST", body: dados });
+            const json = await resposta.json();
+            if (!resposta.ok) throw new Error(json.erro || "Erro ao comparar documentos.");
+            setResultadoComparacao(json);
+        } catch (err) {
+            setErro(err.message || "Não foi possível conectar ao comparador.");
+        } finally {
+            setCarregando(false);
+        }
+    };
 
     // Função de Análise com chamada Real à API Python
     const analisarDocumento = async () => {
@@ -264,6 +290,31 @@ function Analise() {
 
 
                                 <p>JPG, PNG ou PDF</p>
+
+                                <button className="btn-acao" type="button" onClick={() => setModoComparacao(!modoComparacao)} style={{ marginTop: "16px" }}>
+                                    {modoComparacao ? "Voltar para análise simples" : "Comparar dois documentos"}
+                                </button>
+
+                                {modoComparacao && (
+                                    <div style={{ marginTop: "18px", width: "100%" }}>
+                                        <p><strong>Documento 1:</strong> {arquivo?.name || "selecione acima"}</p>
+                                        <label className="btn-upload" style={{ cursor: "pointer", display: "inline-block", marginTop: "10px" }}>
+                                            Selecionar segundo documento
+                                            <input type="file" hidden accept=".pdf,.jpg,.jpeg,.png" onChange={(e) => setDocumento2(e.target.files?.[0] || null)} />
+                                        </label>
+                                        {documento2 && <p style={{ marginTop: "10px" }}><strong>Documento 2:</strong> {documento2.name}</p>}
+                                        <button className="btn-acao" type="button" onClick={compararDocumentos} disabled={carregando || !arquivo || !documento2} style={{ marginTop: "12px" }}>
+                                            {carregando ? "Comparando..." : "Comparar documentos"}
+                                        </button>
+                                    </div>
+                                )}
+
+                                {resultadoComparacao && (
+                                    <div className="resultado-area" style={{ marginTop: "20px", width: "100%" }}>
+                                        <h3>Resultado da comparação</h3>
+                                        <pre style={{ whiteSpace: "pre-wrap", overflowWrap: "anywhere", maxHeight: 320, overflow: "auto", textAlign: "left" }}>{JSON.stringify(resultadoComparacao.comparacao, null, 2)}</pre>
+                                    </div>
+                                )}
                             </div>
                         )}
 
