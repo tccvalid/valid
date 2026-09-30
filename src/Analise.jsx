@@ -361,7 +361,7 @@ function Analise() {
                                     </div>
                                 )}
                             </div>
-                        ))}
+                        )}
 
 
                         {/* ETAPA 2: PREVIEW & ENVIAR */}
