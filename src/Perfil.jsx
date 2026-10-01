@@ -19,7 +19,12 @@ function Perfil() {
   const [usuario, setUsuario] = useState(null); // dados do usuário vazio
   const [loading, setLoading] = useState(true); // quando estiver carregando
   const [erro, setErro] = useState(null); // caso tenha erro
-  const [stats, setStats] = useState({ documentos: 25, ultimaHora: "Hoje, 12:45", ultimoArquivo: "Documento.pdf", taxa: "98,6%" });
+  const [stats, setStats] = useState({
+    documentos: 0,
+    ultimaHora: "Nenhuma",
+    ultimoArquivo: "Sem análises",
+    taxa: "—"
+  });
   const [historico, setHistorico] = useState([]);
   const [doisFatoresAtivo, setDoisFatoresAtivo] = useState(false);
 
@@ -95,40 +100,36 @@ function Perfil() {
 
         setDoisFatoresAtivo(dados.dois_fatores_ativo ?? false);
 
-        setHistorico([
+        const respostaAnalises = await fetch(
+          "http://localhost:8000/analises/resumo",
           {
-            id: 1,
-            nome: "Diploma_universidade.pdf",
-            tamanho: "2,4 MB",
-            data: "02/02/2026",
-            hora: "09:10",
-            status: "autentico"
-          },
-          {
-            id: 2,
-            nome: "Certificado_curso.pdf",
-            tamanho: "1,1 MB",
-            data: "03/03/2026",
-            hora: "10:09",
-            status: "autentico"
-          },
-          {
-            id: 3,
-            nome: "Rg_frente.pdf",
-            tamanho: "1,8 MB",
-            data: "04/04/2026",
-            hora: "12:37",
-            status: "suspeito"
-          },
-          {
-            id: 4,
-            nome: "Historico_escolar.pdf",
-            tamanho: "2,2 MB",
-            data: "05/05/2026",
-            hora: "14:23",
-            status: "autentico"
+            headers: {
+              Authorization: `Bearer ${token}`
+            }
           }
-        ]);
+        );
+
+        if (respostaAnalises.ok) {
+          const dadosAnalises = await respostaAnalises.json();
+
+          setStats({
+            documentos: dadosAnalises.documentos ?? 0,
+            ultimaHora: dadosAnalises.ultimaHora ?? "Nenhuma",
+            ultimoArquivo: dadosAnalises.ultimoArquivo ?? "Sem análises",
+            taxa: dadosAnalises.taxa ?? "—"
+          });
+
+          setHistorico(
+            Array.isArray(dadosAnalises.historico)
+              ? dadosAnalises.historico
+              : []
+          );
+        } else {
+          console.warn(
+            "Não foi possível carregar o histórico:",
+            await respostaAnalises.text()
+          );
+        }
 
       } catch (erro) {
 
@@ -319,10 +320,10 @@ function Perfil() {
               <div>
                 {/* virá da API: stats.taxa */}
                 <p className="card_stat_numero">{stats.taxa}</p>
-                <p className="card_stat_titulo">Taxa de autenticidade média</p>
+                <p className="card_stat_titulo">Pontuação média de suspeita</p>
               </div>
             </div>
-            <p className="card_stat_legenda">Últimas taxas</p>
+            <p className="card_stat_legenda">Média das pontuações disponíveis</p>
           </div>
 
         </div>
@@ -536,7 +537,7 @@ function Perfil() {
               </div>
 
               <div className={arquivo.status === "autentico" ? "status_autentico" : "status_suspeito"}>
-                {arquivo.status === "autentico" ? "Autêntico" : "Suspeito"}
+                {arquivo.status === "autentico" ? "Baixa/Média suspeita" : "Alta suspeita"}
               </div>
 
               <button className="btn_historico" onClick={() => handleVerDetalhes(arquivo.id)}>
