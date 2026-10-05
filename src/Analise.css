@@ -1872,3 +1872,36 @@ RESPONSIVIDADE
   color: #1e293b;
   overflow-wrap: anywhere;
 }
+
+
+.comparacao-validacao-cpf {
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.comparacao-validacao-linha {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  font-size: 11px;
+  color: #64748b;
+}
+
+.comparacao-validacao-linha strong {
+  color: #334155;
+  font-size: 11px;
+}
+
+.comparacao-alerta-validacao {
+  margin-top: 6px !important;
+  padding: 9px 10px;
+  border-radius: 9px;
+  background: #fff7ed;
+  border: 1px solid #fed7aa;
+  color: #9a3412 !important;
+  font-size: 11px !important;
+  line-height: 1.45 !important;
+}
