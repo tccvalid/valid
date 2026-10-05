@@ -25,6 +25,7 @@ function Analise() {
     const [modoComparacao, setModoComparacao] = useState(false);
     const [documento2, setDocumento2] = useState(null);
     const [resultadoComparacao, setResultadoComparacao] = useState(null);
+    const [detalheComparacao, setDetalheComparacao] = useState(false);
 
 
     // Manipulação de seleção do arquivo
@@ -54,6 +55,7 @@ function Analise() {
         setCarregando(true);
         setErro("");
         setResultadoComparacao(null);
+        setDetalheComparacao(false);
 
         const dados = new FormData();
         dados.append("documento1", arquivo);
@@ -77,6 +79,7 @@ function Analise() {
             }
 
             setResultadoComparacao(json.comparacao);
+            setDetalheComparacao(false);
         } catch (err) {
             setErro(
                 err.message ||
@@ -313,6 +316,7 @@ function Analise() {
                                             setModoComparacao(false);
                                             setDocumento2(null);
                                             setResultadoComparacao(null);
+                                            setDetalheComparacao(false);
                                             setErro("");
                                         }}
                                         style={{
@@ -328,6 +332,8 @@ function Analise() {
                                         onClick={() => {
                                             setModoComparacao(true);
                                             setResultadoAPI(null);
+                                            setResultadoComparacao(null);
+                                            setDetalheComparacao(false);
                                             setEtapa("upload");
                                             setErro("");
                                         }}
@@ -359,124 +365,228 @@ function Analise() {
                                         <p>JPG, PNG ou PDF</p>
                                     </>
                                 ) : (
-                                    <div style={{ width: "100%" }}>
+                                    <div className="comparacao-area">
 
-                                        <div
-                                            style={{
-                                                display: "grid",
-                                                gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
-                                                gap: "18px",
-                                                marginBottom: "20px"
-                                            }}
-                                        >
-                                            <div
-                                                style={{
-                                                    border: "1px solid #d9e4df",
-                                                    borderRadius: "14px",
-                                                    padding: "20px"
-                                                }}
-                                            >
-                                                <h3>Documento 1</h3>
-                                                <p>
-                                                    {arquivo
-                                                        ? arquivo.name
-                                                        : "Nenhum arquivo selecionado"}
-                                                </p>
+                                        {!carregando && !resultadoComparacao && (
+                                            <>
+                                                <div className="comparacao-documentos-grid">
+                                                    <div className={`comparacao-arquivo-card ${arquivo ? "selecionado" : ""}`}>
+                                                        <div className="comparacao-arquivo-icone">
+                                                            <FaFilePdf />
+                                                        </div>
 
-                                                <div className="btn-upload">
-                                                    <label style={{ cursor: "pointer" }}>
-                                                        Selecionar documento 1
-                                                        <input
-                                                            type="file"
-                                                            hidden
-                                                            accept=".pdf,.jpg,.jpeg,.png"
-                                                            onChange={(e) => {
-                                                                const file = e.target.files[0];
-                                                                if (file) {
-                                                                    setArquivo(file);
-                                                                    setErro("");
-                                                                    setResultadoComparacao(null);
-                                                                }
-                                                            }}
-                                                        />
-                                                    </label>
+                                                        <span className="mini-label">DOCUMENTO 01</span>
+                                                        <h3>
+                                                            {arquivo
+                                                                ? arquivo.name
+                                                                : "Selecione o primeiro documento"}
+                                                        </h3>
+
+                                                        <p>
+                                                            Documento principal que será usado como referência na comparação.
+                                                        </p>
+
+                                                        <div className="btn-upload">
+                                                            <label style={{ cursor: "pointer" }}>
+                                                                {arquivo ? "Trocar documento" : "Selecionar documento"}
+                                                                <input
+                                                                    type="file"
+                                                                    hidden
+                                                                    accept=".pdf,.jpg,.jpeg,.png"
+                                                                    onChange={(e) => {
+                                                                        const file = e.target.files[0];
+
+                                                                        if (file) {
+                                                                            setArquivo(file);
+                                                                            setErro("");
+                                                                            setResultadoComparacao(null);
+                                                                            setDetalheComparacao(false);
+                                                                        }
+                                                                    }}
+                                                                />
+                                                            </label>
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="comparacao-conector">
+                                                        <div className="comparacao-linha"></div>
+                                                        <span>VS</span>
+                                                        <div className="comparacao-linha"></div>
+                                                    </div>
+
+                                                    <div className={`comparacao-arquivo-card ${documento2 ? "selecionado" : ""}`}>
+                                                        <div className="comparacao-arquivo-icone">
+                                                            <FaFilePdf />
+                                                        </div>
+
+                                                        <span className="mini-label">DOCUMENTO 02</span>
+                                                        <h3>
+                                                            {documento2
+                                                                ? documento2.name
+                                                                : "Selecione o segundo documento"}
+                                                        </h3>
+
+                                                        <p>
+                                                            Documento que terá nome, CPF e data confrontados com o primeiro.
+                                                        </p>
+
+                                                        <div className="btn-upload">
+                                                            <label style={{ cursor: "pointer" }}>
+                                                                {documento2 ? "Trocar documento" : "Selecionar documento"}
+                                                                <input
+                                                                    type="file"
+                                                                    hidden
+                                                                    accept=".pdf,.jpg,.jpeg,.png"
+                                                                    onChange={(e) => {
+                                                                        const file = e.target.files[0];
+
+                                                                        if (file) {
+                                                                            setDocumento2(file);
+                                                                            setErro("");
+                                                                            setResultadoComparacao(null);
+                                                                            setDetalheComparacao(false);
+                                                                        }
+                                                                    }}
+                                                                />
+                                                            </label>
+                                                        </div>
+                                                    </div>
                                                 </div>
-                                            </div>
 
-                                            <div
-                                                style={{
-                                                    border: "1px solid #d9e4df",
-                                                    borderRadius: "14px",
-                                                    padding: "20px"
-                                                }}
-                                            >
-                                                <h3>Documento 2</h3>
-                                                <p>
-                                                    {documento2
-                                                        ? documento2.name
-                                                        : "Nenhum arquivo selecionado"}
-                                                </p>
+                                                {erro && (
+                                                    <p className="erro-comparacao">
+                                                        {erro}
+                                                    </p>
+                                                )}
 
-                                                <div className="btn-upload">
-                                                    <label style={{ cursor: "pointer" }}>
-                                                        Selecionar documento 2
-                                                        <input
-                                                            type="file"
-                                                            hidden
-                                                            accept=".pdf,.jpg,.jpeg,.png"
-                                                            onChange={(e) => {
-                                                                const file = e.target.files[0];
-                                                                if (file) {
-                                                                    setDocumento2(file);
-                                                                    setErro("");
-                                                                    setResultadoComparacao(null);
-                                                                }
-                                                            }}
-                                                        />
-                                                    </label>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        {erro && (
-                                            <p
-                                                style={{
-                                                    color: "#d9534f",
-                                                    marginTop: "15px",
-                                                    fontWeight: "bold"
-                                                }}
-                                            >
-                                                {erro}
-                                            </p>
+                                                <button
+                                                    className="btn-acao"
+                                                    onClick={compararDocumentos}
+                                                    disabled={!arquivo || !documento2}
+                                                >
+                                                    Comparar documentos
+                                                </button>
+                                            </>
                                         )}
 
-                                        <button
-                                            className="btn-acao"
-                                            onClick={compararDocumentos}
-                                            disabled={
-                                                carregando ||
-                                                !arquivo ||
-                                                !documento2
-                                            }
-                                        >
-                                            {carregando
-                                                ? "Comparando..."
-                                                : "Comparar documentos"}
-                                        </button>
+                                        {carregando && (
+                                            <div className="scanner-loading comparacao-loading">
+                                                <div className="scanner-particles">
+                                                    <span></span>
+                                                    <span></span>
+                                                    <span></span>
+                                                    <span></span>
+                                                    <span></span>
+                                                    <span></span>
+                                                    <span></span>
+                                                    <span></span>
+                                                </div>
 
-                                        {resultadoComparacao && (
-                                            <div
-                                                className="relatorio-area"
-                                                style={{
-                                                    marginTop: "28px",
-                                                    width: "100%"
-                                                }}
-                                            >
-                                                <h2 className="section-title">
-                                                    Resultado da Comparação
+                                                <div className="document-scanner">
+                                                    <div className="document-glow"></div>
+
+                                                    <div className="fake-document">
+                                                        <div className="doc-top">
+                                                            <div className="doc-symbol"></div>
+
+                                                            <div className="doc-title-lines">
+                                                                <span></span>
+                                                                <span></span>
+                                                            </div>
+                                                        </div>
+
+                                                        <div className="doc-line long"></div>
+                                                        <div className="doc-line medium"></div>
+                                                        <div className="doc-line short"></div>
+
+                                                        <div className="doc-block">
+                                                            <span></span>
+                                                            <span></span>
+                                                            <span></span>
+                                                        </div>
+
+                                                        <div className="doc-line long"></div>
+                                                        <div className="doc-line medium"></div>
+
+                                                        <div className="scanner-line">
+                                                            <div className="scanner-line-glow"></div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <div className="loading-text">
+                                                    <div className="loading-eyebrow">
+                                                        <span className="pulse-dot"></span>
+                                                        COMPARAÇÃO EM ANDAMENTO
+                                                    </div>
+
+                                                    <h2>
+                                                        Comparando os documentos
+                                                    </h2>
+
+                                                    <p>
+                                                        O VALID está extraindo e confrontando os campos dos dois arquivos para medir a compatibilidade.
+                                                    </p>
+
+                                                    <div className="loading-status">
+                                                        <span className="status-loader"></span>
+                                                        Verificando nome, CPF e data...
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {resultadoComparacao && !detalheComparacao && (
+                                            <div className="resultado-area comparacao-resultado-enter">
+                                                <div className="icone-resultado">
+                                                    {resultadoComparacao.status === "COMPATIVEL"
+                                                        ? <GoShieldCheck />
+                                                        : <GoShield />}
+                                                </div>
+
+                                                <h2>
+                                                    {resultadoComparacao.status === "COMPATIVEL"
+                                                        ? "Documentos compatíveis"
+                                                        : resultadoComparacao.status === "PARCIALMENTE_COMPATIVEL"
+                                                            ? "Compatibilidade parcial"
+                                                            : "Documentos divergentes"}
                                                 </h2>
 
-                                                <div className="resultado-principal">
+                                                <p>
+                                                    {resultadoComparacao.status === "COMPATIVEL"
+                                                        ? "Os campos comparáveis encontrados nos dois documentos apresentam correspondência."
+                                                        : resultadoComparacao.status === "PARCIALMENTE_COMPATIVEL"
+                                                            ? "Parte dos campos coincide, mas existem diferenças que merecem atenção."
+                                                            : "Foram identificadas divergências entre os campos extraídos dos documentos."}
+                                                </p>
+
+                                                <p>
+                                                    <strong>
+                                                        Compatibilidade Final:{" "}
+                                                        {Number(resultadoComparacao.compatibilidade ?? 0).toFixed(1)}%
+                                                    </strong>
+                                                </p>
+
+                                                <button
+                                                    className="btn-acao"
+                                                    onClick={() => setDetalheComparacao(true)}
+                                                >
+                                                    Ver relatório completo
+                                                </button>
+                                            </div>
+                                        )}
+
+                                        {resultadoComparacao && detalheComparacao && (
+                                            <div className="relatorio-area comparacao-resultado-enter">
+                                                <div className="section-title">
+                                                    <span>DETALHAMENTO TÉCNICO</span>
+                                                    <h2>Relatório de Comparação</h2>
+                                                </div>
+
+                                                <div
+                                                    className="resultado-principal"
+                                                    style={{ marginTop: "20px" }}
+                                                >
                                                     <div
                                                         className={`score-card ${
                                                             resultadoComparacao.status === "COMPATIVEL"
@@ -486,71 +596,159 @@ function Analise() {
                                                                     : "alta"
                                                         }`}
                                                     >
-                                                        <span className="score-label">
-                                                            Compatibilidade
-                                                        </span>
+                                                        <div className="score-label">
+                                                            COMPATIBILIDADE
+                                                        </div>
 
-                                                        <strong className="score">
+                                                        <div className="score">
                                                             {Number(
                                                                 resultadoComparacao.compatibilidade ?? 0
-                                                            ).toFixed(0)}%
-                                                        </strong>
+                                                            ).toFixed(1)}
+                                                            <small>%</small>
+                                                        </div>
 
-                                                        <span className="classificacao">
+                                                        <div className="classificacao">
                                                             {resultadoComparacao.status === "COMPATIVEL"
                                                                 ? "Compatível"
                                                                 : resultadoComparacao.status === "PARCIALMENTE_COMPATIVEL"
                                                                     ? "Parcialmente compatível"
                                                                     : "Incompatível"}
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="explicacao">
+                                                        <span className="mini-label">
+                                                            RESULTADO DA COMPARAÇÃO
                                                         </span>
+
+                                                        <h3>
+                                                            Resumo da análise
+                                                        </h3>
+
+                                                        <p>
+                                                            O VALID comparou os campos estruturados encontrados nos dois documentos.
+                                                            O percentual representa a compatibilidade entre os dados disponíveis e deve
+                                                            ser utilizado como apoio à triagem documental.
+                                                        </p>
                                                     </div>
                                                 </div>
 
-                                                <div className="analises-grid">
-                                                    {["nome", "cpf", "data"].map((campo) => {
-                                                        const compativel =
-                                                            resultadoComparacao.campos?.[campo] ===
-                                                            "COMPATIVEL";
+                                                <div
+                                                    className="section-title"
+                                                    style={{ marginTop: "30px" }}
+                                                >
+                                                    <span>DOCUMENTOS</span>
+                                                    <h2>Arquivos comparados</h2>
+                                                </div>
 
-                                                        const similaridadeNome =
-                                                            campo === "nome"
-                                                                ? Number(
-                                                                    resultadoComparacao.detalhes
-                                                                        ?.nome_similaridade ?? 0
-                                                                ) * 100
-                                                                : null;
+                                                <div className="comparacao-resumo-arquivos">
+                                                    <div className="metrica">
+                                                        <span>Documento 01</span>
+                                                        <strong>{arquivo?.name || "-"}</strong>
+                                                    </div>
+
+                                                    <div className="metrica">
+                                                        <span>Documento 02</span>
+                                                        <strong>{documento2?.name || "-"}</strong>
+                                                    </div>
+                                                </div>
+
+                                                <div
+                                                    className="section-title"
+                                                    style={{ marginTop: "30px" }}
+                                                >
+                                                    <span>COMPARAÇÃO DE CAMPOS</span>
+                                                    <h2>Resultados encontrados</h2>
+                                                </div>
+
+                                                <div className="analises-grid">
+                                                    {[
+                                                        {
+                                                            chave: "nome",
+                                                            titulo: "NOME",
+                                                            icone: "N",
+                                                            descricao: "Correspondência entre os nomes identificados."
+                                                        },
+                                                        {
+                                                            chave: "cpf",
+                                                            titulo: "CPF",
+                                                            icone: "C",
+                                                            descricao: "Correspondência entre os CPFs identificados."
+                                                        },
+                                                        {
+                                                            chave: "data",
+                                                            titulo: "DATA",
+                                                            icone: "D",
+                                                            descricao: "Correspondência entre as datas identificadas."
+                                                        }
+                                                    ].map((campo) => {
+                                                        const statusCampo =
+                                                            resultadoComparacao.campos?.[campo.chave];
+
+                                                        const compativel =
+                                                            statusCampo === "COMPATIVEL";
+
+                                                        const naoComparavel =
+                                                            !statusCampo ||
+                                                            statusCampo === "NAO_COMPARAVEL";
+
+                                                        const percentual =
+                                                            campo.chave === "nome"
+                                                                ? Math.min(
+                                                                    Number(
+                                                                        resultadoComparacao.detalhes
+                                                                            ?.nome_similaridade ?? 0
+                                                                    ) * 100,
+                                                                    100
+                                                                )
+                                                                : compativel
+                                                                    ? 100
+                                                                    : 0;
 
                                                         return (
                                                             <div
-                                                                className="analise-card"
-                                                                key={campo}
+                                                                className={`analise-card comparacao-campo-card ${
+                                                                    compativel
+                                                                        ? "campo-compativel"
+                                                                        : naoComparavel
+                                                                            ? "campo-neutro"
+                                                                            : "campo-divergente"
+                                                                }`}
+                                                                key={campo.chave}
                                                             >
                                                                 <div className="card-top">
-                                                                    <div>
-                                                                        <span className="mini-label">
-                                                                            {campo.toUpperCase()}
-                                                                        </span>
-                                                                        <h3>
-                                                                            {compativel
-                                                                                ? "Compatível"
-                                                                                : "Divergente"}
-                                                                        </h3>
+                                                                    <div className="card-icon">
+                                                                        {campo.icone}
                                                                     </div>
+
+                                                                    <span>{campo.titulo}</span>
                                                                 </div>
+
+                                                                <h3>
+                                                                    {naoComparavel
+                                                                        ? "Não comparável"
+                                                                        : compativel
+                                                                            ? "Compatível"
+                                                                            : "Divergente"}
+                                                                </h3>
 
                                                                 <div className="barra">
-                                                                    <span
+                                                                    <div
                                                                         style={{
-                                                                            width: `${compativel ? 100 : 0}%`
+                                                                            width: `${percentual}%`
                                                                         }}
-                                                                    />
+                                                                    ></div>
                                                                 </div>
 
-                                                                {similaridadeNome !== null && (
-                                                                    <p>
-                                                                        Similaridade:{" "}
+                                                                <p>
+                                                                    {campo.descricao}
+                                                                </p>
+
+                                                                {campo.chave === "nome" && (
+                                                                    <p className="comparacao-similaridade">
+                                                                        Similaridade nominal:{" "}
                                                                         <strong>
-                                                                            {similaridadeNome.toFixed(0)}%
+                                                                            {percentual.toFixed(1)}%
                                                                         </strong>
                                                                     </p>
                                                                 )}
@@ -559,13 +757,21 @@ function Analise() {
                                                     })}
                                                 </div>
 
+                                                <div
+                                                    className="section-title metric-title"
+                                                    style={{ marginTop: "30px" }}
+                                                >
+                                                    <span>DETALHAMENTO</span>
+                                                    <h2>Métricas da comparação</h2>
+                                                </div>
+
                                                 <div className="metricas">
                                                     <div className="metrica">
                                                         <span>Compatibilidade geral</span>
                                                         <strong>
                                                             {Number(
                                                                 resultadoComparacao.compatibilidade ?? 0
-                                                            ).toFixed(0)}%
+                                                            ).toFixed(2)}%
                                                         </strong>
                                                     </div>
 
@@ -576,20 +782,52 @@ function Analise() {
                                                                 ?.campos_comparaveis ?? 0}
                                                         </strong>
                                                     </div>
+
+                                                    <div className="metrica">
+                                                        <span>Similaridade do nome</span>
+                                                        <strong>
+                                                            {(
+                                                                Number(
+                                                                    resultadoComparacao.detalhes
+                                                                        ?.nome_similaridade ?? 0
+                                                                ) * 100
+                                                            ).toFixed(2)}%
+                                                        </strong>
+                                                    </div>
+
+                                                    <div className="metrica">
+                                                        <span>Status final</span>
+                                                        <strong>
+                                                            {resultadoComparacao.status === "COMPATIVEL"
+                                                                ? "Compatível"
+                                                                : resultadoComparacao.status === "PARCIALMENTE_COMPATIVEL"
+                                                                    ? "Parcial"
+                                                                    : "Incompatível"}
+                                                        </strong>
+                                                    </div>
                                                 </div>
 
-                                                <button
-                                                    className="btn-acao"
-                                                    style={{ marginTop: "20px" }}
-                                                    onClick={() => {
-                                                        setArquivo(null);
-                                                        setDocumento2(null);
-                                                        setResultadoComparacao(null);
-                                                        setErro("");
-                                                    }}
-                                                >
-                                                    Comparar outros documentos
-                                                </button>
+                                                <div className="acoes-relatorio comparacao-acoes">
+                                                    <button
+                                                        className="btn-acao btn-fechar-rel"
+                                                        onClick={() => setDetalheComparacao(false)}
+                                                    >
+                                                        Voltar para o Resultado
+                                                    </button>
+
+                                                    <button
+                                                        className="btn-acao"
+                                                        onClick={() => {
+                                                            setArquivo(null);
+                                                            setDocumento2(null);
+                                                            setResultadoComparacao(null);
+                                                            setDetalheComparacao(false);
+                                                            setErro("");
+                                                        }}
+                                                    >
+                                                        Comparar outros documentos
+                                                    </button>
+                                                </div>
                                             </div>
                                         )}
                                     </div>
