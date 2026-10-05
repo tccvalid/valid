@@ -547,17 +547,21 @@ function Analise() {
                                                 <h2>
                                                     {resultadoComparacao.status === "COMPATIVEL"
                                                         ? "Documentos compatíveis"
-                                                        : resultadoComparacao.status === "PARCIALMENTE_COMPATIVEL"
-                                                            ? "Compatibilidade parcial"
-                                                            : "Documentos divergentes"}
+                                                        : resultadoComparacao.status === "REQUER_REVISAO"
+                                                            ? "Compatibilidade com ressalvas"
+                                                            : resultadoComparacao.status === "SEM DADOS SUFICIENTES"
+                                                                ? "Dados insuficientes"
+                                                                : "Documentos divergentes"}
                                                 </h2>
 
                                                 <p>
                                                     {resultadoComparacao.status === "COMPATIVEL"
                                                         ? "Os campos comparáveis encontrados nos dois documentos apresentam correspondência."
-                                                        : resultadoComparacao.status === "PARCIALMENTE_COMPATIVEL"
-                                                            ? "Parte dos campos coincide, mas existem diferenças que merecem atenção."
-                                                            : "Foram identificadas divergências entre os campos extraídos dos documentos."}
+                                                        : resultadoComparacao.status === "REQUER_REVISAO"
+                                                            ? "Os valores podem coincidir, mas há dados que exigem revisão de validade antes da conclusão."
+                                                            : resultadoComparacao.status === "SEM DADOS SUFICIENTES"
+                                                                ? "Não foram encontrados campos suficientes para concluir a comparação com segurança."
+                                                                : "Foram identificadas divergências entre os campos extraídos dos documentos."}
                                                 </p>
 
                                                 <p>
@@ -591,7 +595,7 @@ function Analise() {
                                                         className={`score-card ${
                                                             resultadoComparacao.status === "COMPATIVEL"
                                                                 ? "baixa"
-                                                                : resultadoComparacao.status === "PARCIALMENTE_COMPATIVEL"
+                                                                : resultadoComparacao.status === "REQUER_REVISAO"
                                                                     ? "media"
                                                                     : "alta"
                                                         }`}
@@ -610,9 +614,11 @@ function Analise() {
                                                         <div className="classificacao">
                                                             {resultadoComparacao.status === "COMPATIVEL"
                                                                 ? "Compatível"
-                                                                : resultadoComparacao.status === "PARCIALMENTE_COMPATIVEL"
-                                                                    ? "Parcialmente compatível"
-                                                                    : "Incompatível"}
+                                                                : resultadoComparacao.status === "REQUER_REVISAO"
+                                                                    ? "Requer revisão"
+                                                                    : resultadoComparacao.status === "SEM DADOS SUFICIENTES"
+                                                                        ? "Dados insuficientes"
+                                                                        : "Inconsistente"}
                                                         </div>
                                                     </div>
 
@@ -791,6 +797,49 @@ function Analise() {
                                                                     </div>
                                                                 )}
 
+                                                                {campo.chave === "cpf" && (
+                                                                    <div className="comparacao-validacao-cpf">
+                                                                        {(() => {
+                                                                            const validacao =
+                                                                                resultadoComparacao.detalhes
+                                                                                    ?.cpf_validacao;
+
+                                                                            const traduzir = (status) => {
+                                                                                if (status === "valid") return "Válido";
+                                                                                if (status === "corrected") return "Corrigido pelo OCR";
+                                                                                if (status === "invalid") return "Inválido";
+                                                                                if (status === "ambiguous") return "Ambíguo";
+                                                                                if (status === "not_found") return "Não identificado";
+                                                                                return status || "Não informado";
+                                                                            };
+
+                                                                            const existeRessalva =
+                                                                                ["invalid", "ambiguous"].includes(validacao?.documento1) ||
+                                                                                ["invalid", "ambiguous"].includes(validacao?.documento2);
+
+                                                                            return (
+                                                                                <>
+                                                                                    <div className="comparacao-validacao-linha">
+                                                                                        <span>Validação doc. 1</span>
+                                                                                        <strong>{traduzir(validacao?.documento1)}</strong>
+                                                                                    </div>
+
+                                                                                    <div className="comparacao-validacao-linha">
+                                                                                        <span>Validação doc. 2</span>
+                                                                                        <strong>{traduzir(validacao?.documento2)}</strong>
+                                                                                    </div>
+
+                                                                                    {existeRessalva && (
+                                                                                        <p className="comparacao-alerta-validacao">
+                                                                                            Os valores podem ser iguais, mas a validade matemática do CPF requer revisão.
+                                                                                        </p>
+                                                                                    )}
+                                                                                </>
+                                                                            );
+                                                                        })()}
+                                                                    </div>
+                                                                )}
+
                                                                 {campo.chave === "nome" && (
                                                                     <p className="comparacao-similaridade">
                                                                         Similaridade nominal:{" "}
@@ -847,9 +896,11 @@ function Analise() {
                                                         <strong>
                                                             {resultadoComparacao.status === "COMPATIVEL"
                                                                 ? "Compatível"
-                                                                : resultadoComparacao.status === "PARCIALMENTE_COMPATIVEL"
-                                                                    ? "Parcial"
-                                                                    : "Incompatível"}
+                                                                : resultadoComparacao.status === "REQUER_REVISAO"
+                                                                    ? "Requer revisão"
+                                                                    : resultadoComparacao.status === "SEM DADOS SUFICIENTES"
+                                                                        ? "Dados insuficientes"
+                                                                        : "Inconsistente"}
                                                         </strong>
                                                     </div>
                                                 </div>
