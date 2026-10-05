@@ -1591,3 +1591,251 @@ RESPONSIVIDADE
 }
 
 
+
+
+/* =========================================================
+   COMPARAÇÃO DE DOCUMENTOS
+   Padronizada com a análise individual
+   ========================================================= */
+
+.comparacao-area {
+  width: 100%;
+}
+
+.comparacao-documentos-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  gap: 18px;
+  align-items: stretch;
+  width: 100%;
+  margin: 10px 0 6px;
+}
+
+.comparacao-arquivo-card {
+  position: relative;
+  min-height: 230px;
+  padding: 26px;
+  border-radius: 20px;
+  border: 1px solid #e2e8f0;
+  background: #f8fafc;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  transition:
+    transform .25s ease,
+    box-shadow .25s ease,
+    border-color .25s ease,
+    background-color .25s ease;
+}
+
+.comparacao-arquivo-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    circle at top,
+    rgba(0, 162, 121, .09),
+    transparent 55%
+  );
+  opacity: 0;
+  transition: opacity .25s ease;
+  pointer-events: none;
+}
+
+.comparacao-arquivo-card:hover,
+.comparacao-arquivo-card.selecionado {
+  transform: translateY(-3px);
+  border-color: rgba(0, 162, 121, .35);
+  box-shadow: 0 14px 30px rgba(0, 162, 121, .10);
+}
+
+.comparacao-arquivo-card.selecionado::before {
+  opacity: 1;
+}
+
+.comparacao-arquivo-icone {
+  width: 58px;
+  height: 58px;
+  border-radius: 16px;
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 27px;
+  color: #00a279;
+  background: #e9f7f3;
+}
+
+.comparacao-arquivo-card h3 {
+  position: relative;
+  max-width: 100%;
+  margin: 5px 0 8px;
+  font-size: 17px;
+  color: #253b35;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.comparacao-arquivo-card p {
+  position: relative;
+  max-width: 300px;
+  min-height: 42px;
+  margin: 0 auto 4px;
+  color: #74827e;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.comparacao-conector {
+  width: 54px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.comparacao-conector span {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #00a279;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  box-shadow: 0 6px 16px rgba(0, 162, 121, .20);
+}
+
+.comparacao-linha {
+  width: 2px;
+  flex: 1;
+  min-height: 34px;
+  background: linear-gradient(
+    to bottom,
+    transparent,
+    #b9ddd3,
+    transparent
+  );
+}
+
+.erro-comparacao {
+  color: #d9534f !important;
+  margin-top: 15px !important;
+  font-weight: 700;
+}
+
+.comparacao-loading {
+  min-height: 540px;
+  animation: comparacaoEntrada .35s ease both;
+}
+
+.comparacao-resultado-enter {
+  animation: comparacaoEntrada .42s ease both;
+}
+
+@keyframes comparacaoEntrada {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.comparacao-resumo-arquivos {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.comparacao-resumo-arquivos .metrica strong {
+  overflow-wrap: anywhere;
+}
+
+.comparacao-campo-card {
+  transition:
+    transform .25s ease,
+    box-shadow .25s ease,
+    border-color .25s ease;
+}
+
+.comparacao-campo-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 24px rgba(15, 23, 42, .07);
+}
+
+.comparacao-campo-card.campo-compativel {
+  border-color: rgba(46, 204, 113, .28);
+}
+
+.comparacao-campo-card.campo-divergente {
+  border-color: rgba(231, 76, 60, .28);
+}
+
+.comparacao-campo-card.campo-neutro {
+  border-color: #e2e8f0;
+}
+
+.comparacao-campo-card.campo-compativel .barra div {
+  background-color: #2ecc71;
+}
+
+.comparacao-campo-card.campo-divergente .barra div {
+  background-color: #e74c3c;
+}
+
+.comparacao-campo-card.campo-neutro .barra div {
+  background-color: #94a3b8;
+}
+
+.comparacao-similaridade {
+  margin-top: 8px !important;
+}
+
+.comparacao-acoes {
+  margin-top: 30px;
+  text-align: center;
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 768px) {
+  .comparacao-documentos-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .comparacao-conector {
+    width: 100%;
+    flex-direction: row;
+  }
+
+  .comparacao-linha {
+    height: 2px;
+    min-height: 0;
+    width: auto;
+    flex: 1;
+    background: linear-gradient(
+      to right,
+      transparent,
+      #b9ddd3,
+      transparent
+    );
+  }
+
+  .comparacao-resumo-arquivos {
+    grid-template-columns: 1fr;
+  }
+}
