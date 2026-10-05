@@ -1839,3 +1839,36 @@ RESPONSIVIDADE
     grid-template-columns: 1fr;
   }
 }
+
+
+.comparacao-valores {
+  margin-top: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.comparacao-valor-linha {
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.comparacao-valor-linha span {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .7px;
+  color: #64748b;
+  text-transform: uppercase;
+}
+
+.comparacao-valor-linha strong {
+  font-size: 13px;
+  line-height: 1.45;
+  color: #1e293b;
+  overflow-wrap: anywhere;
+}
