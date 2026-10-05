@@ -690,6 +690,7 @@ function Analise() {
 
                                                         const naoComparavel =
                                                             !statusCampo ||
+                                                            statusCampo === "NAO_IDENTIFICADO" ||
                                                             statusCampo === "NAO_COMPARAVEL";
 
                                                         const percentual =
@@ -704,6 +705,28 @@ function Analise() {
                                                                 : compativel
                                                                     ? 100
                                                                     : 0;
+
+                                                        const valores =
+                                                            resultadoComparacao.detalhes
+                                                                ?.valores?.[campo.chave];
+
+                                                        const formatarValor = (valor) => {
+                                                            if (Array.isArray(valor)) {
+                                                                return valor.length
+                                                                    ? valor.join(", ")
+                                                                    : "Não identificado";
+                                                            }
+
+                                                            if (
+                                                                valor === null ||
+                                                                valor === undefined ||
+                                                                valor === ""
+                                                            ) {
+                                                                return "Não identificado";
+                                                            }
+
+                                                            return String(valor);
+                                                        };
 
                                                         return (
                                                             <div
@@ -726,10 +749,16 @@ function Analise() {
 
                                                                 <h3>
                                                                     {naoComparavel
-                                                                        ? "Não comparável"
+                                                                        ? "Não identificado"
                                                                         : compativel
                                                                             ? "Compatível"
-                                                                            : "Divergente"}
+                                                                            : statusCampo === "PARCIALMENTE_COMPATIVEL"
+                                                                                ? "Parcialmente compatível"
+                                                                                : statusCampo === "INVALIDO"
+                                                                                    ? "Inválido"
+                                                                                    : statusCampo === "AMBIGUO"
+                                                                                        ? "Ambíguo"
+                                                                                        : "Divergente"}
                                                                 </h3>
 
                                                                 <div className="barra">
@@ -743,6 +772,24 @@ function Analise() {
                                                                 <p>
                                                                     {campo.descricao}
                                                                 </p>
+
+                                                                {valores && (
+                                                                    <div className="comparacao-valores">
+                                                                        <div className="comparacao-valor-linha">
+                                                                            <span>Documento 1</span>
+                                                                            <strong>
+                                                                                {formatarValor(valores.documento1)}
+                                                                            </strong>
+                                                                        </div>
+
+                                                                        <div className="comparacao-valor-linha">
+                                                                            <span>Documento 2</span>
+                                                                            <strong>
+                                                                                {formatarValor(valores.documento2)}
+                                                                            </strong>
+                                                                        </div>
+                                                                    </div>
+                                                                )}
 
                                                                 {campo.chave === "nome" && (
                                                                     <p className="comparacao-similaridade">
