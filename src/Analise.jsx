@@ -22,6 +22,9 @@ function Analise() {
     const [carregando, setCarregando] = useState(false);
     const [erro, setErro] = useState("");
     const [versaoImagem, setVersaoImagem] = useState(Date.now());
+    const [modoComparacao, setModoComparacao] = useState(false);
+    const [documento2, setDocumento2] = useState(null);
+    const [resultadoComparacao, setResultadoComparacao] = useState(null);
 
 
     // Manipulação de seleção do arquivo
@@ -31,7 +34,7 @@ function Analise() {
             setPreview(URL.createObjectURL(file));
             setErro("");
             setResultadoAPI(null);
-            setEtapa("preview");
+            if (!modoComparacao) setEtapa("preview");
         }
     };
 
@@ -39,6 +42,49 @@ function Analise() {
     const handleInputChange = (e) => {
         const file = e.target.files[0];
         handleArquivo(file);
+    };
+
+
+    const compararDocumentos = async () => {
+        if (!arquivo || !documento2) {
+            setErro("Selecione os dois documentos para comparar.");
+            return;
+        }
+
+        setCarregando(true);
+        setErro("");
+        setResultadoComparacao(null);
+
+        const dados = new FormData();
+        dados.append("documento1", arquivo);
+        dados.append("documento2", documento2);
+
+        try {
+            const resposta = await fetch(
+                "http://127.0.0.1:5000/valid/comparar",
+                {
+                    method: "POST",
+                    body: dados
+                }
+            );
+
+            const json = await resposta.json();
+
+            if (!resposta.ok) {
+                throw new Error(
+                    json.erro || "Erro ao comparar documentos."
+                );
+            }
+
+            setResultadoComparacao(json.comparacao);
+        } catch (err) {
+            setErro(
+                err.message ||
+                "Não foi possível conectar ao comparador."
+            );
+        } finally {
+            setCarregando(false);
+        }
     };
 
 
@@ -250,24 +296,304 @@ function Analise() {
                         {/* ETAPA 1: UPLOAD */}
                         {etapa === "upload" && (
                             <div className="upload-area">
-                                <div className="icone-download"><LuDownload /></div>
-                                <h3>Arraste ou envie seu documento</h3>
 
+                                <div
+                                    style={{
+                                        display: "flex",
+                                        gap: "10px",
+                                        justifyContent: "center",
+                                        marginBottom: "24px",
+                                        flexWrap: "wrap"
+                                    }}
+                                >
+                                    <button
+                                        type="button"
+                                        className="btn-acao"
+                                        onClick={() => {
+                                            setModoComparacao(false);
+                                            setDocumento2(null);
+                                            setResultadoComparacao(null);
+                                            setErro("");
+                                        }}
+                                        style={{
+                                            opacity: modoComparacao ? 0.65 : 1
+                                        }}
+                                    >
+                                        Análise individual
+                                    </button>
 
-                                <div className="btn-upload">
-                                    <label style={{ cursor: "pointer" }}>
-                                        Selecione um arquivo
-                                        <input
-                                            type="file"
-                                            hidden
-                                            accept=".pdf,.jpg,.jpeg,.png"
-                                            onChange={handleInputChange}
-                                        />
-                                    </label>
+                                    <button
+                                        type="button"
+                                        className="btn-acao"
+                                        onClick={() => {
+                                            setModoComparacao(true);
+                                            setResultadoAPI(null);
+                                            setEtapa("upload");
+                                            setErro("");
+                                        }}
+                                        style={{
+                                            opacity: modoComparacao ? 1 : 0.65
+                                        }}
+                                    >
+                                        Comparar documentos
+                                    </button>
                                 </div>
 
+                                {!modoComparacao ? (
+                                    <>
+                                        <div className="icone-download"><LuDownload /></div>
+                                        <h3>Arraste ou envie seu documento</h3>
 
-                                <p>JPG, PNG ou PDF</p>
+                                        <div className="btn-upload">
+                                            <label style={{ cursor: "pointer" }}>
+                                                Selecione um arquivo
+                                                <input
+                                                    type="file"
+                                                    hidden
+                                                    accept=".pdf,.jpg,.jpeg,.png"
+                                                    onChange={handleInputChange}
+                                                />
+                                            </label>
+                                        </div>
+
+                                        <p>JPG, PNG ou PDF</p>
+                                    </>
+                                ) : (
+                                    <div style={{ width: "100%" }}>
+
+                                        <div
+                                            style={{
+                                                display: "grid",
+                                                gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
+                                                gap: "18px",
+                                                marginBottom: "20px"
+                                            }}
+                                        >
+                                            <div
+                                                style={{
+                                                    border: "1px solid #d9e4df",
+                                                    borderRadius: "14px",
+                                                    padding: "20px"
+                                                }}
+                                            >
+                                                <h3>Documento 1</h3>
+                                                <p>
+                                                    {arquivo
+                                                        ? arquivo.name
+                                                        : "Nenhum arquivo selecionado"}
+                                                </p>
+
+                                                <div className="btn-upload">
+                                                    <label style={{ cursor: "pointer" }}>
+                                                        Selecionar documento 1
+                                                        <input
+                                                            type="file"
+                                                            hidden
+                                                            accept=".pdf,.jpg,.jpeg,.png"
+                                                            onChange={(e) => {
+                                                                const file = e.target.files[0];
+                                                                if (file) {
+                                                                    setArquivo(file);
+                                                                    setErro("");
+                                                                    setResultadoComparacao(null);
+                                                                }
+                                                            }}
+                                                        />
+                                                    </label>
+                                                </div>
+                                            </div>
+
+                                            <div
+                                                style={{
+                                                    border: "1px solid #d9e4df",
+                                                    borderRadius: "14px",
+                                                    padding: "20px"
+                                                }}
+                                            >
+                                                <h3>Documento 2</h3>
+                                                <p>
+                                                    {documento2
+                                                        ? documento2.name
+                                                        : "Nenhum arquivo selecionado"}
+                                                </p>
+
+                                                <div className="btn-upload">
+                                                    <label style={{ cursor: "pointer" }}>
+                                                        Selecionar documento 2
+                                                        <input
+                                                            type="file"
+                                                            hidden
+                                                            accept=".pdf,.jpg,.jpeg,.png"
+                                                            onChange={(e) => {
+                                                                const file = e.target.files[0];
+                                                                if (file) {
+                                                                    setDocumento2(file);
+                                                                    setErro("");
+                                                                    setResultadoComparacao(null);
+                                                                }
+                                                            }}
+                                                        />
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {erro && (
+                                            <p
+                                                style={{
+                                                    color: "#d9534f",
+                                                    marginTop: "15px",
+                                                    fontWeight: "bold"
+                                                }}
+                                            >
+                                                {erro}
+                                            </p>
+                                        )}
+
+                                        <button
+                                            className="btn-acao"
+                                            onClick={compararDocumentos}
+                                            disabled={
+                                                carregando ||
+                                                !arquivo ||
+                                                !documento2
+                                            }
+                                        >
+                                            {carregando
+                                                ? "Comparando..."
+                                                : "Comparar documentos"}
+                                        </button>
+
+                                        {resultadoComparacao && (
+                                            <div
+                                                className="relatorio-area"
+                                                style={{
+                                                    marginTop: "28px",
+                                                    width: "100%"
+                                                }}
+                                            >
+                                                <h2 className="section-title">
+                                                    Resultado da Comparação
+                                                </h2>
+
+                                                <div className="resultado-principal">
+                                                    <div
+                                                        className={`score-card ${
+                                                            resultadoComparacao.status === "COMPATIVEL"
+                                                                ? "baixa"
+                                                                : resultadoComparacao.status === "PARCIALMENTE_COMPATIVEL"
+                                                                    ? "media"
+                                                                    : "alta"
+                                                        }`}
+                                                    >
+                                                        <span className="score-label">
+                                                            Compatibilidade
+                                                        </span>
+
+                                                        <strong className="score">
+                                                            {Number(
+                                                                resultadoComparacao.compatibilidade ?? 0
+                                                            ).toFixed(0)}%
+                                                        </strong>
+
+                                                        <span className="classificacao">
+                                                            {resultadoComparacao.status === "COMPATIVEL"
+                                                                ? "Compatível"
+                                                                : resultadoComparacao.status === "PARCIALMENTE_COMPATIVEL"
+                                                                    ? "Parcialmente compatível"
+                                                                    : "Incompatível"}
+                                                        </span>
+                                                    </div>
+                                                </div>
+
+                                                <div className="analises-grid">
+                                                    {["nome", "cpf", "data"].map((campo) => {
+                                                        const compativel =
+                                                            resultadoComparacao.campos?.[campo] ===
+                                                            "COMPATIVEL";
+
+                                                        const similaridadeNome =
+                                                            campo === "nome"
+                                                                ? Number(
+                                                                    resultadoComparacao.detalhes
+                                                                        ?.nome_similaridade ?? 0
+                                                                ) * 100
+                                                                : null;
+
+                                                        return (
+                                                            <div
+                                                                className="analise-card"
+                                                                key={campo}
+                                                            >
+                                                                <div className="card-top">
+                                                                    <div>
+                                                                        <span className="mini-label">
+                                                                            {campo.toUpperCase()}
+                                                                        </span>
+                                                                        <h3>
+                                                                            {compativel
+                                                                                ? "Compatível"
+                                                                                : "Divergente"}
+                                                                        </h3>
+                                                                    </div>
+                                                                </div>
+
+                                                                <div className="barra">
+                                                                    <span
+                                                                        style={{
+                                                                            width: `${compativel ? 100 : 0}%`
+                                                                        }}
+                                                                    />
+                                                                </div>
+
+                                                                {similaridadeNome !== null && (
+                                                                    <p>
+                                                                        Similaridade:{" "}
+                                                                        <strong>
+                                                                            {similaridadeNome.toFixed(0)}%
+                                                                        </strong>
+                                                                    </p>
+                                                                )}
+                                                            </div>
+                                                        );
+                                                    })}
+                                                </div>
+
+                                                <div className="metricas">
+                                                    <div className="metrica">
+                                                        <span>Compatibilidade geral</span>
+                                                        <strong>
+                                                            {Number(
+                                                                resultadoComparacao.compatibilidade ?? 0
+                                                            ).toFixed(0)}%
+                                                        </strong>
+                                                    </div>
+
+                                                    <div className="metrica">
+                                                        <span>Campos comparáveis</span>
+                                                        <strong>
+                                                            {resultadoComparacao.detalhes
+                                                                ?.campos_comparaveis ?? 0}
+                                                        </strong>
+                                                    </div>
+                                                </div>
+
+                                                <button
+                                                    className="btn-acao"
+                                                    style={{ marginTop: "20px" }}
+                                                    onClick={() => {
+                                                        setArquivo(null);
+                                                        setDocumento2(null);
+                                                        setResultadoComparacao(null);
+                                                        setErro("");
+                                                    }}
+                                                >
+                                                    Comparar outros documentos
+                                                </button>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
                             </div>
                         )}
 
