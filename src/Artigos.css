@@ -8,6 +8,23 @@
    ÁREA PRINCIPAL
 ========================================= */
 
+.div-texto {
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .text-branco {
+    margin-bottom: 8px;
+  }
+  
+  .hero-descricao {
+    margin-top: 0;
+  }
+
+.branco-artigos{
+    margin-left: 2px;
+}
+
 .imgartigos.livro-visual {
     position: relative;
     display: flex;
@@ -643,6 +660,292 @@
   }
 }
 
+
+/* =========================================
+   LIVRO ANIMADO — RESPONSIVIDADE
+========================================= */
+
+/* Container do livro */
+.imgartigos.livro-visual {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    min-width: 0;
+    min-height: 510px;
+    padding: 16px 0;
+    box-sizing: border-box;
+    overflow: hidden;
+  }
+  
+  /* Cena principal */
+  .livro-cena {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  
+    width: min(500px, 100%);
+    height: auto;
+    aspect-ratio: 500 / 460;
+  
+    flex-shrink: 0;
+    isolation: isolate;
+  
+    /* A animação permanece independente da escala */
+    animation: livroLevitar 6s ease-in-out infinite;
+  }
+  
+  /* Livro aberto */
+  .livro-aberto {
+    width: min(365px, 73%);
+    height: auto;
+    aspect-ratio: 365 / 245;
+    flex-shrink: 0;
+  }
+  
+  /* Páginas acompanham a altura do livro */
+  .livro-pagina {
+    min-width: 0;
+    padding: clamp(10px, 3.8%, 22px) clamp(7px, 3.8%, 19px);
+    gap: clamp(4px, 1.6%, 8px);
+    box-sizing: border-box;
+  }
+  
+  /* Folha que vira */
+  .livro-folha {
+    min-width: 0;
+  }
+  
+  .folha-frente,
+  .folha-verso {
+    min-width: 0;
+    padding: clamp(10px, 3.8%, 22px) clamp(7px, 3.8%, 19px);
+    gap: clamp(5px, 2%, 10px);
+    box-sizing: border-box;
+  }
+  
+  /* Círculos de fundo */
+  .livro-cena .sobre-circulo {
+    width: 62%;
+    height: auto;
+    aspect-ratio: 1;
+  }
+  
+  .livro-cena > .sobre-orbita-1 {
+    width: 91%;
+    height: auto;
+    aspect-ratio: 1;
+  }
+  
+  .livro-cena > .sobre-orbita-2 {
+    width: 78%;
+    height: auto;
+    aspect-ratio: 1;
+  }
+  
+  /* Órbitas internas */
+  .livro-orbitas {
+    width: 68%;
+    height: auto;
+    aspect-ratio: 1;
+  }
+  
+  .orbita-externa {
+    width: 97%;
+    height: 97%;
+  }
+  
+  .orbita-media {
+    width: 81%;
+    height: 81%;
+  }
+  
+  .orbita-interna {
+    width: 66%;
+    height: 66%;
+  }
+  
+  /* Etiqueta flutuante */
+  .livro-etiqueta {
+    right: 2%;
+    bottom: 10%;
+    max-width: 48%;
+    padding: clamp(8px, 2.6%, 13px);
+    gap: clamp(6px, 2.2%, 11px);
+    box-sizing: border-box;
+  }
+  
+  .livro-etiqueta-icone {
+    width: clamp(28px, 7.6%, 38px);
+    height: clamp(28px, 7.6%, 38px);
+    font-size: clamp(15px, 4%, 20px);
+  }
+  
+  .livro-etiqueta strong {
+    font-size: clamp(10px, 2.5vw, 12px);
+  }
+  
+  .livro-etiqueta small {
+    font-size: clamp(9px, 2.1vw, 11px);
+  }
+  
+  /* =========================================
+     TABLETS
+  ========================================= */
+  
+  @media (max-width: 991px) {
+    .imgartigos.livro-visual {
+      min-height: 430px;
+    }
+  
+    .livro-cena {
+      width: min(460px, 100%);
+    }
+  
+    .livro-aberto {
+      width: 73%;
+    }
+  }
+  
+  /* =========================================
+     CELULARES
+  ========================================= */
+  
+  @media (max-width: 768px) {
+    .imgartigos.livro-visual {
+      min-height: 380px;
+      padding: 10px 0;
+    }
+  
+    .livro-cena {
+      width: min(420px, 100%);
+    }
+  
+    .livro-aberto {
+      width: 73%;
+    }
+  
+    .livro-ilustracao {
+      gap: 4px;
+      padding: 4px;
+    }
+  
+    .livro-ilustracao span {
+      max-width: 19px;
+      min-width: 0;
+      flex: 1;
+    }
+  
+    .livro-mini-grafico {
+      gap: 3px;
+      padding: 3px 4px;
+    }
+  
+    .livro-destaque {
+      gap: 4px;
+      padding: 5px;
+    }
+  }
+  
+  /* =========================================
+     CELULARES ESTREITOS
+  ========================================= */
+  
+  @media (max-width: 480px) {
+    .imgartigos.livro-visual {
+      min-height: 330px;
+      padding: 8px 0;
+    }
+  
+    .livro-cena {
+      width: 100%;
+    }
+  
+    .livro-etiqueta {
+      right: 1%;
+      bottom: 8%;
+      max-width: 49%;
+    }
+  
+    .livro-etiqueta div {
+      min-width: 0;
+    }
+  
+    .livro-etiqueta strong,
+    .livro-etiqueta small {
+      overflow-wrap: anywhere;
+    }
+  
+    .livro-linha {
+      height: 3px;
+    }
+  
+    .livro-linha.titulo-pagina {
+      height: 4px;
+    }
+  
+    .livro-texto-simulado {
+      gap: 4px;
+    }
+  
+    .livro-texto-simulado span {
+      height: 2px;
+    }
+  
+    .livro-simbolo {
+      width: 20px;
+      height: 20px;
+      font-size: 13px;
+    }
+  }
+  
+  /* =========================================
+     CELULARES MUITO PEQUENOS
+  ========================================= */
+  
+  @media (max-width: 360px) {
+    .imgartigos.livro-visual {
+      min-height: 290px;
+    }
+  
+    .livro-etiqueta {
+      padding: 7px;
+      gap: 5px;
+    }
+  
+    .livro-etiqueta-icone {
+      width: 25px;
+      height: 25px;
+      font-size: 13px;
+    }
+  
+    .livro-etiqueta strong {
+      font-size: 9px;
+    }
+  
+    .livro-etiqueta small {
+      font-size: 8px;
+    }
+  }
+  
+  /* =========================================
+     ACESSIBILIDADE
+  ========================================= */
+  
+  @media (prefers-reduced-motion: reduce) {
+    .livro-cena,
+    .livro-folha,
+    .livro-etiqueta,
+    .livro-ponto,
+    .orbita-ponto,
+    .livro-cena > .sobre-orbita-1,
+    .livro-cena > .sobre-orbita-2 {
+      animation: none !important;
+    }
+  }
+  
 /* =========================================
    ANIMAÇÕES
 ========================================= */
@@ -786,4 +1089,152 @@
     .livro-cena>.sobre-orbita-2 {
         animation: none !important;
     }
+}
+
+
+
+/* _____________ */
+.artigosmarbottom {
+  width: 100%;
+  max-width: 1320px;
+  margin: 0 auto;
+  padding: 40px 24px;
+  box-sizing: border-box;
+}
+
+.cards-artigos {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 28px;
+  width: 100%;
+}
+
+.card_artigos {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  border-radius: 12px;
+  box-sizing: border-box;
+}
+
+.card_img_artigos {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  flex-shrink: 0;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+.card_body_artigos {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+.card_clique {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  min-width: 0;
+}
+
+.card_clique_aqui {
+  flex-shrink: 0;
+}
+
+.card_author {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  line-height: 1.5;
+}
+
+.card_titulo_artigos {
+  font-size: clamp(15px, 1.2vw, 18px);
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+  text-align: justify;
+}
+
+.card_desc {
+  font-size: 14px;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+  text-align: justify;
+}
+
+/* Notebooks e tablets na horizontal */
+@media (max-width: 1024px) {
+  .cards-artigos {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 22px;
+  }
+
+  .artigosmarbottom {
+    padding: 32px 20px;
+  }
+}
+
+/* Celulares */
+@media (max-width: 600px) {
+  .artigosmarbottom {
+    padding: 24px 16px;
+  }
+
+  .cards-artigos {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 20px;
+  }
+
+  .card_artigos {
+    width: 100%;
+  }
+
+  .card_img_artigos {
+    aspect-ratio: 16 / 9;
+  }
+
+  .card_body_artigos {
+    padding: 16px;
+  }
+
+  .card_clique {
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .card_titulo_artigos {
+    font-size: 19px;
+  }
+
+  .card_desc {
+    font-size: 14px;
+  }
+}
+
+/* Celulares muito estreitos */
+@media (max-width: 360px) {
+  .artigosmarbottom {
+    padding: 20px 10px;
+  }
+
+  .card_body_artigos {
+    padding: 12px;
+  }
+
+  .card_titulo_artigos {
+    font-size: 17px;
+  }
+
+  .card_desc {
+    font-size: 13px;
+  }
 }

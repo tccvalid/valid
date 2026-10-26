@@ -1,95 +1,119 @@
 import Header from "./components/Header";
 import Footer from "./components/Footer";
-import { Link } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import "./style.css";
-import artigo_conteudo from"./assets/img/artigoConteudo.svg";
+import artigo_conteudo from "./assets/img/artigoConteudo.svg";
 import BackToTop from "./components/BackToTop";
+import artigos from "./ArtigosDados";
 
 function ArtigosConteudo() {
+  const { id } = useParams();
+
+  const artigo = artigos.find(
+    (item) => item.id === Number(id)
+  );
+
+  if (!artigo) {
+    return (
+      <div className="home">
+        <Header />
+
+        <section className="conteiner_artigo">
+          <p className="texto_artigo_conteudo">
+            Artigo não encontrado.
+          </p>
+
+          <Link to="/artigos" className="btn-voltar">
+            ☚ Voltar
+          </Link>
+        </section>
+
+        <Footer />
+      </div>
+    );
+  }
+
   return (
     <div className="home">
-
       <Header />
 
       <section className="fundoverde">
         <div className="row">
-
           <div className="col-6">
             <div className="div-texto">
-              <p className="text-branco">Nome do artigo <p className="p_banner">Subtitulo do artigo </p></p>
+              <p className="text-branco">
+                {artigo.titulo}
+              </p>
+
+              <p className="p_banner">
+                {artigo.subtitulo}
+              </p>
             </div>
           </div>
 
           <div className="col-6">
             <div className="imgartigos">
-              <img src={artigo_conteudo} alt="livro_artigos" />
+              <img
+                src={artigo_conteudo}
+                alt="Ilustração de leitura de artigos"
+              />
             </div>
           </div>
-
         </div>
       </section>
 
-      <section className="container">
-          <div className="conteiner_artigo">
-            <p className="texto_artigo_conteudo">
-              It is a long established fact that a reader will be distracted by the readable content of 
-              a page when looking at its layout. The point of using Lorem Ipsum is that it has a 
-              more-or-less normal distribution of letters, as opposed to using 'Content here, content 
-              here', making it look like readable English. Many desktop publishing packages and web page 
-              editors now use Lorem Ipsum as their default model text, and a search for 'lorem ipsum' 
-              will uncover many web sites still in their infancy. Various versions have evolved over the 
-              years, sometimes by accident, sometimes on purpose (injected humour and the like).
-            </p>
+      <section className="conteiner_artigo">
+        <div className="conteudo-artigo">
+          {artigo.conteudo.map((bloco, index) => (
+            <div key={index}>
+              {bloco.tipo === "titulo" && (
+                <h2 className="artigo_titulo_conteudo">
+                  {bloco.texto}
+                </h2>
+              )}
 
-             <h2 className="artigo_titulo_conteudo">Lorem lorem loremmm</h2>
-             <p className="texto_artigo_conteudo">
-              It is a long established fact that a reader will be distracted by the readable content of 
-              a page when looking at its layout. The point of using Lorem Ipsum is that it has a 
-              more-or-less normal distribution of letters, as opposed to using 'Content here, content 
-              here', making it look like readable English. Many desktop publishing packages and web page 
-              editors now use Lorem Ipsum as their default model text, and a search for 'lorem ipsum' 
-              will uncover many web sites still in their infancy. Various versions have evolved over the 
-              years, sometimes by accident, sometimes on purpose (injected humour and the like).
-            </p>
+              {bloco.tipo === "paragrafo" && (
+                <p className="texto_artigo_conteudo">
+                  {bloco.texto}
+                </p>
+              )}
 
-            <blockquote className="artigo_citacao">
-              "t is a long established fact that a reader will be distracted by the readable content of a page when looking at its layout."
-            </blockquote>  
+              {bloco.tipo === "citacao" && (
+                <blockquote className="artigo_citacao">
+                  {bloco.texto}
+                </blockquote>
+              )}
 
-            <h2 className="artigo_titulo_conteudo">Ipsum ipsum ipsummm</h2>
-            <p className="texto_artigo_conteudo">
-              It is a long established fact that a reader will be distracted by the readable content of 
-              a page when looking at its layout. The point of using Lorem Ipsum is that it has a 
-              more-or-less normal distribution of letters, as opposed to using 'Content here, content 
-              here', making it look like readable English. Many desktop publishing packages and web page 
-              editors now use Lorem Ipsum as their default model text, and a search for 'lorem ipsum' 
-              will uncover many web sites still in their infancy. Various versions have evolved over the 
-              years, sometimes by accident, sometimes on purpose (injected humour and the like).
-            </p>
+              {bloco.tipo === "lista" && (
+                <div className="artigo_lista_container">
+                  <ul className="artigo_lista">
+                    {bloco.itens?.map((item, i) => (
+                      <li key={i}>{item}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
 
-            <div className="conteudo_colorido">
-              <span className="conteudo_colorido_titulo">Lorem Ipsummmm</span>
-              <p className="texto_artigo_conteudo_colorido">
-              It is a long established fact that a reader will be distracted by the readable content of 
-              a page when looking at its layout. The point of using Lorem Ipsum is that it has a 
-              more-or-less normal distribution of letters, as opposed to using 'Content here, content 
-              here', making it look like readable English.
-              </p>
+              {bloco.tipo === "destaque" && (
+                <div className="conteudo_colorido">
+                  <h3>{bloco.titulo}</h3>
+                  <p className="texto_artigo_conteudo_colorido">
+                    {bloco.texto}
+                  </p>
+                </div>
+              )}
             </div>
+          ))}
+        </div>
 
-            <div>
-              <Link to="/artigos" className="btn-voltar"> ☚ Voltar</Link>
-            </div>
-
-          </div>
+        <div>
+          <Link to="/artigos" className="btn-voltar"> ☚ Voltar</Link>
+        </div>
       </section>
 
-
       <Footer />
-
       <BackToTop />
     </div>
-
   );
 }
 

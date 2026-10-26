@@ -2,11 +2,13 @@ import Header from "./components/Header";
 import Footer from "./components/Footer";
 import "./style.css";
 import "./Artigos.css";
+import artigos from "./ArtigosDados";
 
 import { Link } from "react-router-dom";
 import BackToTop from "./components/BackToTop";
 
 function Artigos() {
+
   return (
     <div className="home">
       <Header />
@@ -15,12 +17,13 @@ function Artigos() {
         <div className="row">
           <div className="col-6">
             <div className="div-texto">
-              <p className="text-branco">
-                Artigos
-                <p className="hero-descricao">
-                  Identifique possíveis indícios de falsificação e
-                  adulteração documental com tecnologia inteligente.
-                </p>
+              <p className="text-branco branco-artigos">
+                Blog
+              </p>
+
+              <p className="hero-descricao">
+                Identifique possíveis indícios de falsificação e
+                adulteração documental com tecnologia inteligente.
               </p>
             </div>
           </div>
@@ -182,7 +185,7 @@ function Artigos() {
                   <span className="livro-etiqueta-icone">✦</span>
                   <div>
                     <strong>Conhecimento</strong>
-                    <small>Artigos e informações</small>
+                    <small> & Informações</small>
                   </div>
                 </div>
               </div>
@@ -192,38 +195,41 @@ function Artigos() {
       </section>
 
       <section className="container artigosmarbottom">
-        {[1, 2, 3].map((linha) => (
-          <div className="cards-artigos" key={linha}>
-            {[1, 2, 3].map((card) => (
-              <div className="card_artigos" key={card}>
-                <div className="card_img_artigos" />
+        <div className="cards-artigos">
+          {artigos.map((artigo) => (
+            <div className="card_artigos" key={artigo.id}>
+              <div
+                className="card_img_artigos"
+                style={{
+                  backgroundImage: `url("${artigo.imagem}")`,
+                }}
+              />
 
-                <div className="card_body_artigos">
-                  <div className="card_clique">
-                    <Link
-                      to="/artigosConteudo"
-                      className="card_clique_aqui"
-                    >
-                      Clique Aqui
-                    </Link>
+              <div className="card_body_artigos">
+                <div className="card_clique">
+                  <Link
+                    to={`/artigosConteudo/${artigo.id}`}
+                    className="card_clique_aqui"
+                  >
+                    Clique Aqui
+                  </Link>
 
-                    <span className="card_author">
-                      Adriano Bendazzoli
-                    </span>
-                  </div>
-
-                  <p className="card_titulo_artigos">
-                    Como identificar documentos falsos
-                  </p>
-
-                  <p className="card_desc">
-                    Aprenda os principais sinais de falsificação
-                  </p>
+                  <span className="card_author">
+                    {artigo.autor}
+                  </span>
                 </div>
+
+                <p className="card_titulo_artigos">
+                  {artigo.titulo}
+                </p>
+
+                <p className="card_desc">
+                  {artigo.descricao}
+                </p>
               </div>
-            ))}
-          </div>
-        ))}
+            </div>
+          ))}
+        </div>
       </section>
 
       <Footer />
