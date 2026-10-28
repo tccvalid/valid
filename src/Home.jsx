@@ -221,7 +221,7 @@ function Home() {
           <div className="cards-home-func">
             <div className="card-etapas">
               <div className="icardhome2"><LuDownload /></div>
-              <h3>Uploud do documento</h3>
+              <h3>Upload do documento</h3>
               <p>Faça upload do documento que deseja verificar de forma rápida e segura</p>
             </div>
 
